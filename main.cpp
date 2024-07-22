@@ -277,6 +277,103 @@ void seqPlusOneFinder(int n, int sum, int solution, std::bitset<N_PLUS_ONE> &seq
     }
 }
 
+void get_Solution_to_k11_r11(int n, int m, int k11, int r11, int current_j, int currentSumK, int currentSumR,
+                             std::vector<int>& sequence_k, std::vector<std::vector<int>>& k_solutions, std::vector<int>& sequence_r,
+                             std::vector<std::vector<int>>& r_solutions) {
+    if(current_j > m) {
+        if(currentSumK == k11) {
+            k_solutions.push_back(sequence_k);
+        }
+        if(currentSumR == r11) {
+            r_solutions.push_back(sequence_r);
+
+        }
+        return;
+    }
+    int maxV = std::floor((n + 1 - current_j) / m) + 1;
+    bool isOdd = (maxV % 2 != 0);
+    int v1, v2;
+    if(m>=n+1) {
+        for(v1 = -1; v1<=1; v1++) {
+            for(v2 = -1; v2<=1; v2++) {
+                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                    if( (v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                        sequence_k[current_j-1] =  v1;
+                        sequence_r[current_j-1] =  v2;
+                        get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                    }
+                }
+            }
+        }
+    } else {
+        for(v1 = -maxV; v1<=maxV; v1++) {
+            for(v2 = -maxV; v2<=maxV; v2++) {
+                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                    if((v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                        sequence_k[current_j-1] =  v1;
+                        sequence_r[current_j-1] =  v2;
+                        get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void get_Solution_to_p11_q11(int n, int m, int p11, int q11, int current_j, int currentSumP, int currentSumQ,
+                             std::vector<int>& sequence_p, std::vector<std::vector<int>>& p_solutions, std::vector<int>& sequence_q,
+                             std::vector<std::vector<int>>& q_solutions) {
+    if(current_j > m) {
+        if(currentSumP == p11) {
+            p_solutions.push_back(sequence_p);
+        }
+        if(currentSumQ == q11) {
+            q_solutions.push_back(sequence_q);
+        }
+        return;
+    }
+    int maxV = std::floor((n - current_j) / m) + 1;
+    bool isOdd = (maxV % 2 != 0);
+    int v1, v2;
+    if(m>=n+1) {
+        if(current_j == m) {
+            sequence_p[current_j-1] = 0;
+            sequence_q[current_j-1] =  0;
+            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP,
+                                    currentSumQ, sequence_p, p_solutions, sequence_q, q_solutions);
+        } else {
+            for(v1 = -1; v1<=1; v1++) {
+                for(v2 = -1; v2<=1; v2++) {
+                    if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                        if( (v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                            sequence_p[current_j-1] =  v1;
+                            sequence_q[current_j-1] =  v2;
+                            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                    currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        for(v1 = -maxV; v1<=maxV; v1++) {
+            for(v2 = -maxV; v2<=maxV; v2++) {
+                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                    if((v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                        sequence_p[current_j-1] =  v1;
+                        sequence_q[current_j-1] =  v2;
+                        get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void getSolutionToK11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int>>& k_solutions) {
     if(current_j > m) {
         if(currentSum == seq_11) {
@@ -287,14 +384,26 @@ void getSolutionToK11(int n, int m, int seq_11, int current_j, std::vector<int>&
     int maxV = std::floor((n + 1 - current_j) / m) + 1;
     bool isOdd = (maxV % 2 != 0);
     int k;
-    for(k = -maxV; k<=maxV; k++) {
-        if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-            if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                sequence_k[current_j-1] =  k;
-                getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum+ k, k_solutions);
+    if(m==n+1) {
+        for(k = -1; k<=1; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
+                    sequence_k[current_j-1] =  k;
+                    getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum+ k, k_solutions);
+                }
+            }
+        }
+    } else {
+        for(k = -maxV; k<=maxV; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
+                    sequence_k[current_j-1] =  k;
+                    getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum+ k, k_solutions);
+                }
             }
         }
     }
+
 }
 
 
@@ -308,14 +417,26 @@ void getSolutionToR11(int n, int m, int seq_11, int current_j, std::vector<int>&
     int maxV = std::floor((n + 1 - current_j) / m) + 1;
     bool isOdd = (maxV % 2 != 0);
     int k;
-    for(k = -maxV; k<=maxV; k++) {
-        if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-            if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                sequence_r[current_j-1] =  k;
-                getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum+ k, r_solutions);
+    if(m==n+1) {
+        for(k = -1; k<=1; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
+                    sequence_r[current_j-1] =  k;
+                    getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum+ k, r_solutions);
+                }
+            }
+        }
+    } else {
+        for(k = -maxV; k<=maxV; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
+                    sequence_r[current_j-1] =  k;
+                    getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum+ k, r_solutions);
+                }
             }
         }
     }
+
 }
 
 void getSolutionToP11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int>>& p_solutions) {
@@ -329,16 +450,18 @@ void getSolutionToP11(int n, int m, int seq_11, int current_j, std::vector<int>&
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
-        if(current_j==m) {
-            sequence_p[current_j-1] = 0;
-            getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum, p_solutions);
-        } else {
-            for(k = -maxV; k<=maxV; k++) {
-                if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                    if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                        sequence_p[current_j-1] =  k;
-                        getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum+ k, p_solutions);
-                    }
+        if(current_j == m) {
+            sequence_p[current_j-1] =  0;
+            if(currentSum == seq_11) {
+                p_solutions.push_back(sequence_p);
+            }
+            return;
+        }
+        for(k = -1; k<=1; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
+                    sequence_p[current_j-1] =  k;
+                    getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum+ k, p_solutions);
                 }
             }
         }
@@ -365,19 +488,22 @@ void getSolutionToQ11(int n, int m, int seq_11, int current_j, std::vector<int>&
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
-        if(current_j==m) {
-            sequence_q[current_j-1] = 0;
-            getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum, q_solutions);
-        } else {
-            for(k = -maxV; k<=maxV; k++) {
-                if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                    if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                        sequence_q[current_j-1] =  k;
-                        getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum+ k, q_solutions);
-                    }
+        if(current_j == m) {
+            sequence_q[current_j-1] =  0;
+            if(currentSum == seq_11) {
+                q_solutions.push_back(sequence_q);
+            }
+            return;
+        }
+        for(k = -1; k<=1; k++) {
+            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
+                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
+                    sequence_q[current_j-1] =  k;
+                    getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum+ k, q_solutions);
                 }
             }
         }
+
     } else {
         for(k = -maxV; k<=maxV; k++) {
             if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
@@ -396,13 +522,15 @@ bool step2Condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<
     int maxV;
     for(i=1; i<=m; i++) {
         maxV = std::floor((n + 1 - i) / m) + 1;
-        if(maxV%2==0) {
-            if((sequence1[i-1]%2!=0)||(sequence2[i-1]%2!=0)) {
-                return false;
-            }
-        } else {
-            if((sequence1[i-1]%2==0)||(sequence2[i-1]%2==0)) {
-                return false;
+        if(std::abs(sequence1[i-1])<=maxV && std::abs(sequence2[i-1])<=maxV) {
+            if(maxV%2==0) {
+                if((sequence1[i-1]%2!=0)||(sequence2[i-1]%2!=0)) {
+                    return false;
+                }
+            } else {
+                if((sequence1[i-1]%2==0)||(sequence2[i-1]%2==0)) {
+                    return false;
+                }
             }
         }
     }
@@ -430,9 +558,38 @@ bool step2Condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<
     return true;
 }
 
+//bool step2Condition3_p_q(int n, int m, std::vector<int> sequence_p, std::vector<int> sequence_q) {
+//    int i, j, index, sum1;
+//
+//    for(j=1; j<=m; j++) {
+//        index = n+1-j;
+//        sum1 = sequence_p[j-1]+sequence_q[j-1]+sequence_p[index+1]+sequence_q[index+1];
+//        if(sum1%4!=0) {
+//            return false;
+//        }
+//    }
+//    return true;
+//}
+
 bool step2Condition3_p_q(int n, int m, std::vector<int>& sequence1, std::vector<int>& sequence2) {
-    int j, index, sum1;
-    for(j=1; j<=m; j++) {
+    int i, j, index, sum1;
+    int maxV;
+    for(i=1; i<m; i++) {
+        maxV = std::floor((n - i) / m) + 1;
+        if(std::abs(sequence1[i-1])<=maxV && std::abs(sequence2[i-1])<=maxV)  {
+            if(maxV%2==0) {
+                if((sequence1[i-1]%2!=0)||(sequence2[i-1]%2!=0)) {
+                    return false;
+                }
+            } else {
+                if((sequence1[i-1]%2==0)||(sequence2[i-1]%2==0)) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    for(j=1; j<m; j++) {
         index = n+1-j;
         sum1 = sequence1[j-1]+sequence2[j-1]+sequence1[index-1]+sequence2[index-1];
         if(sum1%4!=0) {
@@ -521,11 +678,14 @@ void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     std::vector<int> filtered_r_solutions;
     std::vector<int> filtered_p_solutions;
     std::vector<int> filtered_q_solutions;
-
-    getSolutionToK11(n, m, k11, 1, sequence_k, 0, k_solutions);
-    getSolutionToR11(n, m, r11, 1, sequence_r, 0, r_solutions);
-    getSolutionToP11(n, m, p11, 1, sequence_p, 0, p_solutions);
-    getSolutionToQ11(n, m, q11, 1, sequence_q, 0, q_solutions);
+    get_Solution_to_k11_r11(n, m, k11, r11, 1, 0,0,
+                            sequence_k, k_solutions, sequence_r, r_solutions);
+    get_Solution_to_p11_q11(n,m,p11, q11, 1, 0, 0,
+                            sequence_p, p_solutions, sequence_q, q_solutions);
+//    getSolutionToK11(n, m, k11, 1, sequence_k, 0, k_solutions);
+//    getSolutionToR11(n, m, r11, 1, sequence_r, 0, r_solutions);
+//    getSolutionToP11(n, m, p11, 1, sequence_p, 0, p_solutions);
+//    getSolutionToQ11(n, m, q11, 1, sequence_q, 0, q_solutions);
     int i, j;
     bool cond_k_r, cond_p_q;
     for(i=0; i<k_solutions.size(); i++) {
@@ -652,6 +812,7 @@ int main(int argc, char *argv[]) {
     int arr_res_D[m];
     int nk, nr, np, nq, sum;
     bool k_res, r_res, p_res, q_res;
+    findQuadruple(n, m);
 
 //    filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
 //    filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
@@ -669,7 +830,7 @@ int main(int argc, char *argv[]) {
 //        if(!k_res){
 //            printf("Seq A doesn't satisfy the condition in step 2");
 //            break;
-//        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0])) {
+//        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0]) && m==2) {
 //            printf("Seq A doesn't satisfy the condition in step 1");
 //            break;
 //        }
@@ -680,7 +841,7 @@ int main(int argc, char *argv[]) {
 //        if(!r_res){
 //            printf("Seq B doesn't satisfy the condition in step 2");
 //            break;
-//        } else if (arr_res_B[1] > arr_res_A[0]) {
+//        } else if (arr_res_B[1] > arr_res_A[0] && m==2) {
 //            printf("Seq B doesn't satisfy the condition in step 1");
 //            break;
 //        }
@@ -691,7 +852,7 @@ int main(int argc, char *argv[]) {
 //        if(!p_res){
 //            printf("Seq C doesn't satisfy the condition in step 2");
 //            break;
-//        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
+//        } else if (arr_res_C[1]>arr_res_C[0] && m==2) {
 //            printf("Seq C doesn't satisfy the condition in step 1");
 //            break;
 //        }
@@ -702,7 +863,7 @@ int main(int argc, char *argv[]) {
 //        if(!q_res){
 //            printf("Seq D doesn't satisfy the condition in step 2");
 //            break;
-//        } else if (arr_res_D[1] > arr_res_D[0]) {
+//        } else if (arr_res_D[1] > arr_res_D[0] && m==2) {
 //            printf("Seq D doesn't satisfy the condition in step 1");
 //            break;
 //        }
@@ -841,9 +1002,6 @@ int main(int argc, char *argv[]) {
 //    } else {
 //        printf("step v failed to match\n");
 //    }
-
-
-    findQuadruple(n, m);
 
 
 //    std::unordered_set<std::bitset<N_PLUS_ONE>> solution_seqs_A;
