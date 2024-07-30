@@ -120,6 +120,12 @@ void removeDuplicates(std::vector<int>& vec) {
 bool condition2_element_verify_k_r(int n, int m, std::vector<int>& seq, std::vector<int>& seq2) {
     int i, current_j, max_v_j;
     bool isOdd_j;
+    if(m>=n+1) {
+        if(std::find(seq.begin(), seq.end(), 0) != seq.end() ||
+        std::find(seq2.begin(), seq2.end(), 0) != seq2.end()) {
+            return false;
+        }
+    }
     for(i=0; i<seq.size(); i++) {
         current_j = i+1;
         max_v_j = std::floor((n+1-current_j)/m) +1;
@@ -140,7 +146,13 @@ bool condition2_element_verify_k_r(int n, int m, std::vector<int>& seq, std::vec
 bool condition2_element_verify_p_q(int n, int m, std::vector<int>& seq, std::vector<int>& seq2) {
     int i, current_j, max_v_j;
     bool isOdd_j;
-    for(i=0; i<seq.size(); i++) {
+    if(m>=n+1) {
+        if(seq[n]!=0 || seq2[n]!=0) {
+            return false;
+        }
+    }
+
+    for(i=0; i<seq.size()-1; i++) {
         current_j = i+1;
         max_v_j = std::floor((n-current_j)/m)+1;
         isOdd_j = (max_v_j % 2 != 0);
@@ -163,7 +175,7 @@ std::vector<std::pair<int, int>> step3_pair_find_k_r(int n, int m, int element, 
     int max_v_j = std::floor((n+1-current_j)/m) +1;
     int max_v_j_plus_m = std::floor((n+1-current_j+m/2)/m) +1;
     int i, j;
-    if(m==n+1) {
+    if(m>=n+1) {
         for (i=-1; i<=1; i++) {
             for(j=-1; j<=1; j++) {
                 if(i+j == element) {
@@ -171,21 +183,22 @@ std::vector<std::pair<int, int>> step3_pair_find_k_r(int n, int m, int element, 
                 }
             }
         }
-        return pairs;
     }
-    for (i=-max_v_j; i<=max_v_j; i++) {
-        for(j=-max_v_j_plus_m; j<=max_v_j_plus_m; j++) {
-            if(i+j == element) {
-                pairs.emplace_back(i, j);
+    else {
+        for (i=-max_v_j; i<=max_v_j; i++) {
+            for(j=-max_v_j_plus_m; j<=max_v_j_plus_m; j++) {
+                if(i+j == element) {
+                    pairs.emplace_back(i, j);
+                }
             }
         }
     }
 
-//    if(!pairs.empty() && pairs.size()>1) {
-//        std::sort(pairs.begin(), pairs.end());
-//        auto last = std::unique(pairs.begin(), pairs.end());
-//        pairs.erase(last, pairs.end());
-//    }
+    if(!pairs.empty() && pairs.size()>1) {
+        std::sort(pairs.begin(), pairs.end());
+        auto last = std::unique(pairs.begin(), pairs.end());
+        pairs.erase(last, pairs.end());
+    }
     return pairs;
 }
 
@@ -194,107 +207,96 @@ std::vector<std::pair<int, int>> step3_pair_find_p_q(int n, int m, int element, 
     int max_v_j = std::floor((n-current_j)/m) +1;
     int max_v_j_plus_m = std::floor((n-current_j+m/2)/m) +1;
     int i, j;
-    if(m==n+1) {
-        for (i=-1; i<=1; i++) {
-            for(j=-1; j<=1; j++) {
-                if(i+j == element) {
-                    pairs.emplace_back(i, j);
-                }
-            }
-        }
-        return pairs;
-    }
-    for (i=-max_v_j; i<=max_v_j; i++) {
-        for(j=-max_v_j_plus_m; j<=max_v_j_plus_m; j++) {
-            if(i+j == element) {
-                pairs.emplace_back(i, j);
-            }
-        }
-    }
-//    if(!pairs.empty() && pairs.size()>1) {
-//        std::sort(pairs.begin(), pairs.end());
-//        auto last = std::unique(pairs.begin(), pairs.end());
-//        pairs.erase(last, pairs.end());
-//    }
-    return pairs;
-}
-
-
-void getSolutionToK11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int>>& k_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
-            k_solutions.push_back(sequence_k);
-        }
-        return;
-    }
-    int maxV = std::floor((n + 1 - current_j) / m) + 1;
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    std::vector<std::pair<int, int>> pairs;
     if(m>=n+1) {
-        for(k =-1; k<=1; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if(k+currentSum <= seq_11){
-                    pairs = step3_pair_find_k_r(n, m+m, k, current_j);
-                    for(std::pair<int, int> & p : pairs) {
-                        sequence_k[current_j-1] = p.first;
-                        sequence_k[current_j+m-1] = p.second;
-                        getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum + k, k_solutions);
-                    }
-                }
-            }
+        if(current_j==n+1) {
+            pairs.emplace_back(0, 0);
         }
-    } else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if(k+currentSum <= seq_11){
-                    pairs = step3_pair_find_k_r(n, m+m, k, current_j);
-                    for(std::pair<int, int> & p : pairs) {
-                        sequence_k[current_j-1] = p.first;
-                        sequence_k[current_j+m-1] = p.second;
-                        getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum + k, k_solutions);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void getSolutionToR11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_r, int currentSum, std::vector<std::vector<int>>& r_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
-            r_solutions.push_back(sequence_r);
-        }
-        return;
-    }
-    int maxV = std::floor((n + 1 - current_j) / m) + 1;
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    std::vector<std::pair<int, int>> pairs;
-    if(m>=n+1) {
-        for(k = -1; k<=1; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if(k+currentSum <= seq_11){
-                    pairs = step3_pair_find_k_r(n, m+m, k, current_j);
-                    for(std::pair<int, int> & p : pairs) {
-                        sequence_r[current_j-1] = p.first;
-                        sequence_r[current_j+m-1] = p.second;
-                        getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum + k, r_solutions);
+        else {
+            for (i=-1; i<=1; i++) {
+                for(j=-1; j<=1; j++) {
+                    if(i+j == element) {
+                        pairs.emplace_back(i, j);
                     }
                 }
             }
         }
     }
     else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if( k+currentSum <= seq_11){
-                    pairs = step3_pair_find_k_r(n, m+m, k, current_j);
-                    for(std::pair<int, int> & p : pairs) {
-                        sequence_r[current_j-1] = p.first;
-                        sequence_r[current_j+m-1] = p.second;
-                        getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum + k, r_solutions);
+        for (i=-max_v_j; i<=max_v_j; i++) {
+            for(j=-max_v_j_plus_m; j<=max_v_j_plus_m; j++) {
+                if(i+j == element) {
+                    pairs.emplace_back(i, j);
+                }
+            }
+        }
+    }
+    if(!pairs.empty() && pairs.size()>1) {
+        std::sort(pairs.begin(), pairs.end());
+        auto last = std::unique(pairs.begin(), pairs.end());
+        pairs.erase(last, pairs.end());
+    }
+    return pairs;
+}
+
+
+void get_Solution_to_k11_r11(int n, int m, int k11, int r11, int current_j, int currentSumK, int currentSumR,
+                             std::vector<int>& sequence_k, std::vector<std::vector<int>>& k_solutions, std::vector<int>& sequence_r,
+                             std::vector<std::vector<int>>& r_solutions) {
+    if(current_j > m) {
+        if(currentSumK == k11) {
+            k_solutions.push_back(sequence_k);
+        }
+        if(currentSumR == r11) {
+            r_solutions.push_back(sequence_r);
+
+        }
+        return;
+    }
+    int maxV = std::floor((n + 1 - current_j) / m) + 1;
+    bool isOdd = (maxV % 2 != 0);
+    std::vector<std::pair<int, int>> pairs1;
+    std::vector<std::pair<int, int>> pairs2;
+    int v1, v2;
+    if(m>=n+1) {
+        for(v1 = -1; v1<=1; v1++) {
+            for(v2 = -1; v2<=1; v2++) {
+                if(v1!=0 && v2!=0) {
+                    if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                        if( (v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                            pairs1 = step3_pair_find_k_r(n, m+m, v1, current_j);
+                            pairs2 = step3_pair_find_k_r(n, m+m, v2, current_j);
+                            for(std::pair<int, int> & p1 : pairs1) {
+                                for(std::pair<int, int> & p2 : pairs2) {
+                                    sequence_k[current_j-1] = p1.first;
+                                    sequence_k[current_j+m-1] = p1.second;
+                                    sequence_r[current_j-1] = p2.first;
+                                    sequence_r[current_j+m-1] = p2.second;
+                                    get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                            currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        for(v1 = -maxV; v1<=maxV; v1++) {
+            for(v2 = -maxV; v2<=maxV; v2++) {
+                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                    if((v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                        pairs1 = step3_pair_find_k_r(n, m+m, v1, current_j);
+                        pairs2 = step3_pair_find_k_r(n, m+m, v2, current_j);
+                        for(std::pair<int, int> & p1 : pairs1) {
+                            for(std::pair<int, int> & p2 : pairs2) {
+                                sequence_k[current_j-1] = p1.first;
+                                sequence_k[current_j+m-1] = p1.second;
+                                sequence_r[current_j-1] = p2.first;
+                                sequence_r[current_j+m-1] = p2.second;
+                                get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                        currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                            }
+                        }
                     }
                 }
             }
@@ -302,56 +304,76 @@ void getSolutionToR11(int n, int m, int seq_11, int current_j, std::vector<int>&
     }
 }
 
-void getSolutionToP11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int>>& p_solutions) {
+
+void get_Solution_to_p11_q11(int n, int m, int p11, int q11, int current_j, int currentSumP, int currentSumQ,
+                             std::vector<int>& sequence_p, std::vector<std::vector<int>>& p_solutions, std::vector<int>& sequence_q,
+                             std::vector<std::vector<int>>& q_solutions) {
     if(current_j > m) {
-        if(currentSum == seq_11) {
+        if(currentSumP == p11) {
             p_solutions.push_back(sequence_p);
         }
-        return;
-    }
-    int maxV = std::floor((n - current_j) / m) + 1;
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    std::vector<std::pair<int, int>> pairs;
-    for(k = -maxV; k<=maxV; k++) {
-        if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-            if(k+currentSum <= seq_11){
-                pairs = step3_pair_find_p_q(n, m+m, k, current_j);
-                for(std::pair<int, int> & p : pairs) {
-                    sequence_p[current_j-1] = p.first;
-                    sequence_p[current_j+m-1] = p.second;
-                    getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum + k, p_solutions);
-                }
-            }
-        }
-    }
-}
-
-void getSolutionToQ11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_q, int currentSum, std::vector<std::vector<int>>& q_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
+        if(currentSumQ == q11) {
             q_solutions.push_back(sequence_q);
         }
         return;
     }
     int maxV = std::floor((n - current_j) / m) + 1;
     bool isOdd = (maxV % 2 != 0);
-    int k;
-    std::vector<std::pair<int, int>> pairs;
-
-    for(k = -maxV; k<=maxV; k++) {
-        if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-            if(k+currentSum <= seq_11){
-                pairs = step3_pair_find_p_q(n, m+m, k, current_j);
-                for(std::pair<int, int> & p : pairs) {
-                    sequence_q[current_j-1] = p.first;
-                    sequence_q[current_j+m-1] = p.second;
-                    getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum + k, q_solutions);
+    std::vector<std::pair<int, int>> pairs1;
+    std::vector<std::pair<int, int>> pairs2;
+    int v1, v2;
+    if(m>=n+1) {
+        if(current_j == n+1) {
+            sequence_p[current_j-1] = 0;
+            sequence_p[current_j+m-1] = 0;
+            sequence_q[current_j-1] =  0;
+            sequence_q[current_j+m-1] = 0;
+            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP,
+                                    currentSumQ, sequence_p, p_solutions, sequence_q, q_solutions);
+        } else {
+            for(v1 = -1; v1<=1; v1++) {
+                for(v2 = -1; v2<=1; v2++) {
+                    if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                        if( (v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                            pairs1 = step3_pair_find_p_q(n, m+m, v1, current_j);
+                            pairs2 = step3_pair_find_p_q(n, m+m, v2, current_j);
+                            for(std::pair<int, int> & p1 : pairs1) {
+                                for(std::pair<int, int> & p2 : pairs2) {
+                                    sequence_p[current_j-1] = p1.first;
+                                    sequence_p[current_j+m-1] = p1.second;
+                                    sequence_q[current_j-1] = p2.first;
+                                    sequence_q[current_j+m-1] = p2.second;
+                                    get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                            currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        for(v1 = -maxV; v1<=maxV; v1++) {
+            for(v2 = -maxV; v2<=maxV; v2++) {
+                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
+                    if((v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
+                        pairs1 = step3_pair_find_p_q(n, m+m, v1, current_j);
+                        pairs2 = step3_pair_find_p_q(n, m+m, v2, current_j);
+                        for(std::pair<int, int> & p1 : pairs1) {
+                            for(std::pair<int, int> & p2 : pairs2) {
+                                sequence_p[current_j-1] = p1.first;
+                                sequence_p[current_j+m-1] = p1.second;
+                                sequence_q[current_j-1] = p2.first;
+                                sequence_q[current_j+m-1] = p2.second;
+                                get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                        currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-
 }
 
 bool condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<int>& sequence2) {
@@ -384,7 +406,7 @@ bool condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<int>&
 
 bool condition3_p_q(int n, int m, std::vector<int>& sequence1, std::vector<int>& sequence2) {
     int j, index, sum;
-    for(j=1; j<=m/2; j++) {
+    for(j=1; j<m/2; j++) {
         index = n+1-j;
         sum = sequence1[j-1]+sequence1[(j+m/2)-1]+sequence2[j-1]+sequence2[(j+m/2)-1]
               +sequence1[index-1]+sequence1[(index+m/2)-1]+sequence2[index-1]+sequence2[(index+m/2)-1];
@@ -406,15 +428,16 @@ int getSquaredSum(int m, std::vector<int>& sequence) {
 
 bool step2_condition5 (int n, int m, std::vector<int>& sequenceK, std::vector<int>& sequenceR,
                        std::vector<int>& sequenceP, std::vector<int>& sequenceQ) {
+    int sum;
     if(m>=n+1) {
         int j;
-        int sum2 =0;
+        sum =0;
         for(j=1; j<m; j++) {
-            sum2+= naf_polynomial_decomposition (j, m, sequenceK, 'k');
-            sum2+= naf_polynomial_decomposition (j, m, sequenceR, 'r');
-            sum2+= naf_polynomial_decomposition (j, m, sequenceP, 'p');
-            sum2+= naf_polynomial_decomposition (j, m, sequenceQ, 'q');
-            if (sum2 != 0) {
+            sum+= naf_polynomial_decomposition (j, m, sequenceK, 'k');
+            sum+= naf_polynomial_decomposition (j, m, sequenceR, 'r');
+            sum+= naf_polynomial_decomposition (j, m, sequenceP, 'p');
+            sum+= naf_polynomial_decomposition (j, m, sequenceQ, 'q');
+            if (sum != 0) {
                 return false;
             }
         }
@@ -467,6 +490,7 @@ void step2_condition4 (int n, int m, std::vector<int>& filtered_k_solutions, std
                             print_sequence(p_solutions[filtered_p_solutions[k]], m, 'P');
                             print_sequence(q_solutions[filtered_q_solutions[l]], m, 'Q');
                             printf("\n");
+                            return;
                         }
                     }
                 }
@@ -492,11 +516,11 @@ void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     std::vector<int> filtered_r_solutions;
     std::vector<int> filtered_p_solutions;
     std::vector<int> filtered_q_solutions;
+    get_Solution_to_k11_r11(n, m, k11, r11, 1, 0,0,
+                            sequence_k, k_solutions, sequence_r, r_solutions);
+    get_Solution_to_p11_q11(n,m,p11, q11, 1, 0, 0,
+                            sequence_p, p_solutions, sequence_q, q_solutions);
 
-    getSolutionToK11(n, m, k11, 1, sequence_k, 0, k_solutions);
-    getSolutionToR11(n, m, r11, 1, sequence_r, 0, r_solutions);
-    getSolutionToP11(n, m, p11, 1, sequence_p, 0, p_solutions);
-    getSolutionToQ11(n, m, q11, 1, sequence_q, 0, q_solutions);
     int i, j;
     bool cond2_k_r, cond2_p_q, cond3_k_r, cond3_p_q;
     for(i=0; i<k_solutions.size(); i++) {
@@ -529,6 +553,19 @@ void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     printf("Q solutions found: %d \n", filtered_q_solutions.size());
     step2_condition4(n, m+m, filtered_k_solutions, filtered_r_solutions, filtered_p_solutions, filtered_q_solutions,
                      k_solutions, r_solutions, p_solutions, q_solutions);
+    sequence_k.clear();
+    sequence_r.clear();
+    sequence_p.clear();
+    sequence_q.clear();
+    k_solutions.clear();
+    r_solutions.clear();
+    p_solutions.clear();
+    q_solutions.clear();
+    filtered_k_solutions.clear();
+    filtered_r_solutions.clear();
+    filtered_p_solutions.clear();
+    filtered_q_solutions.clear();
+
 }
 
 void findQuadruple(int n, int m) {
@@ -589,7 +626,7 @@ void findQuadruple(int n, int m) {
         printf("q11: %d\n", q11);
 
         int j;
-        for(j=2; j<=m; j++) {
+        for(j=m/2; j<=m; j++) {
             getAllSolutions(n, j, k11, r11, p11, q11);
             printf("--------------------------------------------------------------------------\n");
             printf("\n");
@@ -598,7 +635,7 @@ void findQuadruple(int n, int m) {
 }
 
 int main(int argc, char *argv[]) {
-    int n = 5;
+    int n = 7;
 //    int A[] = {-1,1,-1,1,-1,-1,1,1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1};
 //    int B[] ={1,-1,-1,1,-1,-1,1,-1,-1,1,1,1,-1,1,1,1,1,-1,1,-1};
 //    int C[] ={1,-1,1,1,1,1,1,-1,1,1,1,-1,-1,1,1,-1,1,-1,-1};
