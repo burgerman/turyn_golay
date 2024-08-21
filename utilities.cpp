@@ -98,23 +98,12 @@ int naf_polynomial_decomposition (int s, int m, int arr_res[], char letter) {
     return res;
 }
 
-int naf_polynomial_decomposition (int s, int m, std::vector<int>& sequence, char letter) {
+int naf_polynomial_decomposition (int s, int m, std::vector<int>& sequence) {
     int i;
     int res = 0;
-//    printf("N_%c(%d) = ", toupper(letter), s);
     for(i=1;i<=m-s;i++) {
-//        if (i!=m-s) {
-//            printf("%c_{%d,%d} * ", letter,i,m);
-//            printf("%c_{%d,%d} + ", letter,i+s,m);
-//        }
-//        else {
-//            printf("%c_{%d,%d} * ", letter,i,m);
-//            printf("%c_{%d,%d}", letter,i+s,m);
-//        }
         res += sequence[i-1]*sequence[i-1+s];
     }
-//    printf("%d", res);
-//    printf("\n");
     return res;
 }
 

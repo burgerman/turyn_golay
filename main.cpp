@@ -10,6 +10,7 @@
 #include <climits>
 #include <algorithm>
 #include "utilities.h"
+#include <omp.h>
 
 void construct_quadruple (const int a[], const int b[], int** quadruple, int n) {
     int i;
@@ -201,7 +202,7 @@ std::list<std::list<int>> nsoks(int nn, int kk) {
     for (auto i=res.begin(); i!=res.end(); i++) {
         std::list<int> &seq = *i;
         if(seq.size()!=kk) {
-            num_of_zeros = kk - seq.size();
+            num_of_zeros = static_cast<int>(kk - seq.size());
             for(ii=1; ii<=num_of_zeros; ii++){
                 seq.push_front(0);
             }
@@ -282,39 +283,53 @@ void get_Solution_to_k11_r11(int n, int m, int k11, int r11, int current_j, int 
                              std::vector<std::vector<int>>& r_solutions) {
     if(current_j > m) {
         if(currentSumK == k11) {
-            k_solutions.push_back(sequence_k);
+            #pragma omp critical
+            {
+                k_solutions.push_back(sequence_k);
+            }
+
         }
         if(currentSumR == r11) {
-            r_solutions.push_back(sequence_r);
-
+            #pragma omp critical
+            {
+                r_solutions.push_back(sequence_r);
+            }
         }
         return;
     }
-    int maxV = std::floor((n + 1 - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int v1, v2;
     if(m>=n+1) {
+        #pragma omp parallel for collapse(2) schedule(dynamic) private(v1, v2) shared(sequence_k, sequence_r)
         for(v1 = -1; v1<=1; v1++) {
             for(v2 = -1; v2<=1; v2++) {
                 if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
                     if( (v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                        sequence_k[current_j-1] =  v1;
-                        sequence_r[current_j-1] =  v2;
-                        get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
-                                                currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                        #pragma omp task firstprivate(v1, v2)
+                        {
+                            sequence_k[current_j-1] =  v1;
+                            sequence_r[current_j-1] =  v2;
+                            get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                    currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                        }
                     }
                 }
             }
         }
     } else {
+        #pragma omp parallel for collapse(2) schedule(dynamic) private(v1, v2) shared(sequence_k, sequence_r)
         for(v1 = -maxV; v1<=maxV; v1++) {
             for(v2 = -maxV; v2<=maxV; v2++) {
                 if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
                     if((v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                        sequence_k[current_j-1] =  v1;
-                        sequence_r[current_j-1] =  v2;
-                        get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
-                                                currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                        #pragma omp task firstprivate(v1, v2)
+                        {
+                            sequence_k[current_j-1] =  v1;
+                            sequence_r[current_j-1] =  v2;
+                            get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
+                                                    currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
+                        }
                     }
                 }
             }
@@ -328,14 +343,21 @@ void get_Solution_to_p11_q11(int n, int m, int p11, int q11, int current_j, int 
                              std::vector<std::vector<int>>& q_solutions) {
     if(current_j > m) {
         if(currentSumP == p11) {
-            p_solutions.push_back(sequence_p);
+            #pragma omp critical
+            {
+                p_solutions.push_back(sequence_p);
+            }
+
         }
         if(currentSumQ == q11) {
-            q_solutions.push_back(sequence_q);
+            #pragma omp critical
+            {
+                q_solutions.push_back(sequence_q);
+            }
         }
         return;
     }
-    int maxV = std::floor((n - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int v1, v2;
     if(m>=n+1) {
@@ -345,28 +367,36 @@ void get_Solution_to_p11_q11(int n, int m, int p11, int q11, int current_j, int 
             get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP,
                                     currentSumQ, sequence_p, p_solutions, sequence_q, q_solutions);
         } else {
+            #pragma omp parallel for collapse(2) schedule(dynamic) private(v1, v2) shared(sequence_p, sequence_q)
             for(v1 = -1; v1<=1; v1++) {
                 for(v2 = -1; v2<=1; v2++) {
                     if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
                         if( (v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                            sequence_p[current_j-1] =  v1;
-                            sequence_q[current_j-1] =  v2;
-                            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
-                                                    currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                            #pragma omp task firstprivate(v1, v2)
+                            {
+                                sequence_p[current_j-1] =  v1;
+                                sequence_q[current_j-1] =  v2;
+                                get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                        currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                            }
                         }
                     }
                 }
             }
         }
     } else {
+        #pragma omp parallel for collapse(2) schedule(dynamic) private(v1, v2) shared(sequence_p, sequence_q)
         for(v1 = -maxV; v1<=maxV; v1++) {
             for(v2 = -maxV; v2<=maxV; v2++) {
                 if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
                     if((v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                        sequence_p[current_j-1] =  v1;
-                        sequence_q[current_j-1] =  v2;
-                        get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
-                                                currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                        #pragma omp task firstprivate(v1, v2)
+                        {
+                            sequence_p[current_j-1] =  v1;
+                            sequence_q[current_j-1] =  v2;
+                            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
+                                                    currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
+                        }
                     }
                 }
             }
@@ -381,7 +411,7 @@ void getSolutionToK11(int n, int m, int seq_11, int current_j, std::vector<int>&
         }
         return;
     }
-    int maxV = std::floor((n + 1 - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
@@ -414,7 +444,7 @@ void getSolutionToR11(int n, int m, int seq_11, int current_j, std::vector<int>&
         }
         return;
     }
-    int maxV = std::floor((n + 1 - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
@@ -446,7 +476,7 @@ void getSolutionToP11(int n, int m, int seq_11, int current_j, std::vector<int>&
         }
         return;
     }
-    int maxV = std::floor((n - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
@@ -484,7 +514,7 @@ void getSolutionToQ11(int n, int m, int seq_11, int current_j, std::vector<int>&
         }
         return;
     }
-    int maxV = std::floor((n - current_j) / m) + 1;
+    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
     bool isOdd = (maxV % 2 != 0);
     int k;
     if(m==n+1) {
@@ -521,7 +551,7 @@ bool step2Condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<
     bool isMultipleOfM = (n%m == 0);
     int maxV;
     for(i=1; i<=m; i++) {
-        maxV = std::floor((n + 1 - i) / m) + 1;
+        maxV = static_cast<int>(std::floor((n + 1 - i) / m) + 1);
         if(std::abs(sequence1[i-1])<=maxV && std::abs(sequence2[i-1])<=maxV) {
             if(maxV%2==0) {
                 if((sequence1[i-1]%2!=0)||(sequence2[i-1]%2!=0)) {
@@ -575,7 +605,7 @@ bool step2Condition3_p_q(int n, int m, std::vector<int>& sequence1, std::vector<
     int i, j, index, sum1;
     int maxV;
     for(i=1; i<m; i++) {
-        maxV = std::floor((n - i) / m) + 1;
+        maxV = static_cast<int>(std::floor((n - i) / m) + 1);
         if(std::abs(sequence1[i-1])<=maxV && std::abs(sequence2[i-1])<=maxV)  {
             if(maxV%2==0) {
                 if((sequence1[i-1]%2!=0)||(sequence2[i-1]%2!=0)) {
@@ -599,13 +629,23 @@ bool step2Condition3_p_q(int n, int m, std::vector<int>& sequence1, std::vector<
     return true;
 }
 
+//int getSquaredSum(int m, std::vector<int>& sequence) {
+//    int sum =0;
+//    int i;
+//    for(i=0; i<m; i++) {
+//        sum += sequence[i] * sequence[i];
+//    }
+//    return sum;
+//}
+
 int getSquaredSum(int m, std::vector<int>& sequence) {
-    int sum =0;
-    int i;
-    for(i=0; i<m; i++) {
-        sum += sequence[i] * sequence[i];
-    }
-    return sum;
+    // Ensure m is not larger than the sequence size
+    m = std::min(m, static_cast<int>(sequence.size()));
+
+    return std::accumulate(sequence.begin(), sequence.begin() + m, 0,
+                           [](int sum, int value) {
+                               return sum + value * value;
+                           });
 }
 
 bool step2_condition5 (int m, std::vector<int>& sequenceK, std::vector<int>& sequenceR,
@@ -613,14 +653,14 @@ bool step2_condition5 (int m, std::vector<int>& sequenceK, std::vector<int>& seq
     int i, sum;
     for (i=1; i<=m/2; i++) {
         sum = 0;
-        sum += naf_polynomial_decomposition (i, m, sequenceK, 'k');
-        sum += naf_polynomial_decomposition (m-i, m, sequenceK, 'k');
-        sum += naf_polynomial_decomposition (i, m, sequenceR, 'r');
-        sum += naf_polynomial_decomposition (m-i, m, sequenceR, 'r');
-        sum += naf_polynomial_decomposition (i, m, sequenceP, 'p');
-        sum += naf_polynomial_decomposition (m-i, m, sequenceP, 'p');
-        sum += naf_polynomial_decomposition (i, m, sequenceQ, 'q');
-        sum += naf_polynomial_decomposition (m-i, m, sequenceQ, 'q');
+        sum += naf_polynomial_decomposition (i, m, sequenceK);
+        sum += naf_polynomial_decomposition (m-i, m, sequenceK);
+        sum += naf_polynomial_decomposition (i, m, sequenceR);
+        sum += naf_polynomial_decomposition (m-i, m, sequenceR);
+        sum += naf_polynomial_decomposition (i, m, sequenceP);
+        sum += naf_polynomial_decomposition (m-i, m, sequenceP);
+        sum += naf_polynomial_decomposition (i, m, sequenceQ);
+        sum += naf_polynomial_decomposition (m-i, m, sequenceQ);
         if (sum != 0) {
             return false;
         }
@@ -628,43 +668,52 @@ bool step2_condition5 (int m, std::vector<int>& sequenceK, std::vector<int>& seq
     return true;
 }
 
-void step2_condition4 (int n, int m, std::vector<int>& filtered_k_solutions, std::vector<int>& filtered_r_solutions,
+bool step2_condition4 (int n, int m, std::vector<int>& filtered_k_solutions, std::vector<int>& filtered_r_solutions,
                               std::vector<int>& filtered_p_solutions, std::vector<int>& filtered_q_solutions,
                               std::vector<std::vector<int>>& k_solutions,  std::vector<std::vector<int>>& r_solutions,
                               std::vector<std::vector<int>>& p_solutions,  std::vector<std::vector<int>>& q_solutions) {
 
     int i, j, k, l, result;
+    bool found = false;
     int cond = 4*n+2;
+    #pragma omp parallel for collapse(4) schedule(dynamic) num_threads(8) private(i,j,k,l,result) shared(found)
     for (i=0; i<filtered_k_solutions.size(); i++) {
         for(j=0; j<filtered_r_solutions.size(); j++) {
             for(k=0; k<filtered_p_solutions.size(); k++) {
                 for(l=0; l<filtered_q_solutions.size(); l++) {
-                    result = getSquaredSum(m, k_solutions[filtered_k_solutions[i]]) +
-                    getSquaredSum(m, r_solutions[filtered_r_solutions[j]]) +
-                    getSquaredSum(m, p_solutions[filtered_p_solutions[k]]) +
-                    getSquaredSum(m, q_solutions[filtered_q_solutions[l]]);
+                    auto& sequenceK = k_solutions[filtered_k_solutions[i]];
+                    auto& sequenceR = r_solutions[filtered_r_solutions[j]];
+                    auto& sequenceP = p_solutions[filtered_p_solutions[k]];
+                    auto& sequenceQ = q_solutions[filtered_q_solutions[l]];
+                    result = getSquaredSum(m, sequenceK) +
+                    getSquaredSum(m, sequenceR) +
+                    getSquaredSum(m, sequenceP) +
+                    getSquaredSum(m, sequenceQ);
                     if (result == cond) {
-                        bool cond5 = step2_condition5(m, k_solutions[filtered_k_solutions[i]],
-                                                      r_solutions[filtered_r_solutions[j]],
-                                                      p_solutions[filtered_p_solutions[k]],
-                                                      q_solutions[filtered_q_solutions[l]]);
+                        bool cond5 = step2_condition5(m, sequenceK,sequenceR,sequenceP,sequenceQ);
                         if (cond5) {
-                            print_sequence(k_solutions[filtered_k_solutions[i]], m, 'K');
-                            print_sequence(r_solutions[filtered_r_solutions[j]], m, 'R');
-                            print_sequence(p_solutions[filtered_p_solutions[k]], m, 'P');
-                            print_sequence(q_solutions[filtered_q_solutions[l]], m, 'Q');
-                            printf("\n");
+                            #pragma omp critical
+                            {
+                                if(!found) {
+                                    print_sequence(sequenceK, m, 'K');
+                                    print_sequence(sequenceR, m, 'R');
+                                    print_sequence(sequenceP, m, 'P');
+                                    print_sequence(sequenceQ, m, 'Q');
+                                    printf("\n");
+                                    found = true;
+                                    return found;
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
-
-
+    return found;
 }
 
-void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
+bool getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     std::vector<int> sequence_k(m);
     std::vector<int> sequence_r(m);
     std::vector<int> sequence_p(m);
@@ -687,7 +736,7 @@ void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
 //    getSolutionToP11(n, m, p11, 1, sequence_p, 0, p_solutions);
 //    getSolutionToQ11(n, m, q11, 1, sequence_q, 0, q_solutions);
     int i, j;
-    bool cond_k_r, cond_p_q;
+    bool cond_k_r, cond_p_q, res;
     for(i=0; i<k_solutions.size(); i++) {
         for(j=0; j<r_solutions.size(); j++) {
             cond_k_r = step2Condition3_k_r(n,m, k_solutions[i], r_solutions[j]);
@@ -710,12 +759,18 @@ void getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     removeDuplicates(filtered_r_solutions);
     removeDuplicates(filtered_p_solutions);
     removeDuplicates(filtered_q_solutions);
-    printf("K solutions found: %d \n", filtered_k_solutions.size());
-    printf("R solutions found: %d \n", filtered_r_solutions.size());
-    printf("P solutions found: %d \n", filtered_p_solutions.size());
-    printf("Q solutions found: %d \n", filtered_q_solutions.size());
-    step2_condition4(n, m, filtered_k_solutions, filtered_r_solutions, filtered_p_solutions, filtered_q_solutions,
+    printf("K solutions found: %zu \n", filtered_k_solutions.size());
+    printf("R solutions found: %zu \n", filtered_r_solutions.size());
+    printf("P solutions found: %zu \n", filtered_p_solutions.size());
+    printf("Q solutions found: %zu \n", filtered_q_solutions.size());
+    res = step2_condition4(n, m, filtered_k_solutions, filtered_r_solutions, filtered_p_solutions, filtered_q_solutions,
                      k_solutions, r_solutions, p_solutions, q_solutions);
+    if(res) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 void findQuadruple(int n, int m) {
@@ -741,8 +796,8 @@ void findQuadruple(int n, int m) {
             }
         }
         printf("\n");
-        printf("number of evens: %d\n", evens.size());
-        printf("number of odds : %d\n", odds.size());
+        printf("number of evens: %zu\n", evens.size());
+        printf("number of odds : %zu\n", odds.size());
         if(evens.size() != 2 || odds.size()!=2) {
             continue;
         }
@@ -776,17 +831,19 @@ void findQuadruple(int n, int m) {
         printf("q11: %d\n", q11);
 
         int j;
-        for(j=2; j<=m; j++) {
-            getAllSolutions(n, j, k11, r11, p11, q11);
-            printf("--------------------------------------------------------------------------\n");
-            printf("\n");
+        for(j=n+1; j<=m; j++) {
+            if(getAllSolutions(n, j, k11, r11, p11, q11)){
+                printf("--------------------------------------------------------------------------\n");
+                printf("\n");
+                break;
+            }
         }
     }
 }
 
 int main(int argc, char *argv[]) {
     int i,j;
-    int n = 5;
+    int n = 9;
 //    int A[] = {-1,1,-1,1,-1,-1,1,1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1};
 //    int B[] ={1,-1,-1,1,-1,-1,1,-1,-1,1,1,1,-1,1,1,1,1,-1,1,-1};
 //    int C[] ={1,-1,1,1,1,1,1,-1,1,1,1,-1,-1,1,1,-1,1,-1,-1};
@@ -805,14 +862,18 @@ int main(int argc, char *argv[]) {
     int len_B = sizeof(B)/ sizeof(int);
     int len_C = sizeof(C)/ sizeof(int);
     int len_D = sizeof(D)/ sizeof(int);
-    int m = n+1;
-    int arr_res_A[m];
-    int arr_res_B[m];
-    int arr_res_C[m];
-    int arr_res_D[m];
+//    int arr_res_A[m];
+//    int arr_res_B[m];
+//    int arr_res_C[m];
+//    int arr_res_D[m];
     int nk, nr, np, nq, sum;
     bool k_res, r_res, p_res, q_res;
-    findQuadruple(n, m);
+    for(i=n; i<=9; i++) {
+        int m = n+1;
+        printf("n=%d\n", i);
+        findQuadruple(i, m);
+        printf("--------------------------------------------------------------------------\n");
+    }
 
 //    filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
 //    filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
