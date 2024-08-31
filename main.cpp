@@ -122,266 +122,58 @@ void removeDuplicates(std::vector<int>& vec) {
     vec.swap(result);
 }
 
-void get_Solution_to_k11_r11(int n, int m, int k11, int r11, int current_j, int currentSumK, int currentSumR,
-                             std::vector<int>& sequence_k, std::vector<std::vector<int>>& k_solutions, std::vector<int>& sequence_r,
-                             std::vector<std::vector<int>>& r_solutions) {
+void find_k11(int n, int m, int k11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int>>& k_solutions) {
     if(current_j > m) {
-        if(currentSumK == k11) {
-            k_solutions.push_back(sequence_k);
-        }
-        if(currentSumR == r11) {
-            r_solutions.push_back(sequence_r);
-        }
-        return;
-    }
-    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int v1, v2;
-    if(m>=n+1) {
-        for(v1 = -1; v1<=1; v1++) {
-            for(v2 = -1; v2<=1; v2++) {
-                if(v1==0 || v2 ==0) {
-                    continue;
-                }
-                else {
-                    if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
-                        if( (v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                            sequence_k[current_j-1] =  v1;
-                            sequence_r[current_j-1] =  v2;
-                            get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
-                                                    currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        for(v1 = -maxV; v1<=maxV; v1++) {
-            for(v2 = -maxV; v2<=maxV; v2++) {
-                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
-                    if((v1+currentSumK <= k11 && v2+currentSumR <= r11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                        sequence_k[current_j-1] =  v1;
-                        sequence_r[current_j-1] =  v2;
-                        get_Solution_to_k11_r11(n, m, k11, r11, current_j+1, currentSumK+v1,
-                                                currentSumR+v2, sequence_k, k_solutions, sequence_r, r_solutions);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void get_Solution_to_p11_q11(int n, int m, int p11, int q11, int current_j, int currentSumP, int currentSumQ,
-                             std::vector<int>& sequence_p, std::vector<std::vector<int>>& p_solutions, std::vector<int>& sequence_q,
-                             std::vector<std::vector<int>>& q_solutions) {
-    if(current_j > m) {
-        if(currentSumP == p11) {
-                p_solutions.push_back(sequence_p);
-        }
-        if(currentSumQ == q11) {
-            q_solutions.push_back(sequence_q);
-        }
-        return;
-    }
-    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int v1, v2;
-    if(m>=n+1) {
-        if(current_j == m) {
-            sequence_p[current_j-1] = 0;
-            sequence_q[current_j-1] =  0;
-            get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP,
-                                    currentSumQ, sequence_p, p_solutions, sequence_q, q_solutions);
-        } else {
-            for(v1 = -1; v1<=1; v1++) {
-                for(v2 = -1; v2<=1; v2++) {
-                    if(v1==0 || v2 == 0) {
-                        continue;
-                    }
-                    else {
-                        if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
-                            if( (v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                                sequence_p[current_j-1] =  v1;
-                                sequence_q[current_j-1] =  v2;
-                                get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
-                                                        currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
-
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-    } else {
-        for(v1 = -maxV; v1<=maxV; v1++) {
-            for(v2 = -maxV; v2<=maxV; v2++) {
-                if((isOdd && (v1%2 != 0 && v2%2 !=0)) || (!isOdd && (v1%2 == 0 && v2%2 ==0))) {
-                    if((v1+currentSumP <= p11 && v2+currentSumQ <= q11) && (std::abs(v1)<=maxV && std::abs(v2)<=maxV)){
-                        sequence_p[current_j-1] =  v1;
-                        sequence_q[current_j-1] =  v2;
-                        get_Solution_to_p11_q11(n, m, p11, q11, current_j+1, currentSumP+v1,
-                                                currentSumQ+v2, sequence_p, p_solutions, sequence_q, q_solutions);
-                    }
-                }
-            }
-        }
-    }
-}
-
-void getSolutionToK11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int>>& k_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
+        if(currentSum == k11) {
             k_solutions.push_back(sequence_k);
         }
         return;
     }
-    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    if(m>=n+1) {
-        for(k = -1; k<=1; k++) {
-            if(k==0) {
-                continue;
-            }
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                    sequence_k[current_j-1] =  k;
-                    getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum+ k, k_solutions);
-                }
-            }
-        }
-    } else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                    sequence_k[current_j-1] =  k;
-                    getSolutionToK11(n, m, seq_11, current_j+1, sequence_k, currentSum+ k, k_solutions);
-                }
-            }
-        }
-    }
-
+    sequence_k[current_j-1] = 1;
+    find_k11(n,m,k11, current_j+1, sequence_k, currentSum+1, k_solutions);
+    sequence_k[current_j-1] = -1;
+    find_k11(n,m,k11, current_j+1, sequence_k, currentSum-1, k_solutions);
 }
 
-
-void getSolutionToR11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_r, int currentSum, std::vector<std::vector<int>>& r_solutions) {
+void find_r11(int n, int m, int r11, int current_j, std::vector<int>& sequence_r, int currentSum, std::vector<std::vector<int>>& r_solutions) {
     if(current_j > m) {
-        if(currentSum == seq_11) {
+        if(currentSum == r11) {
             r_solutions.push_back(sequence_r);
         }
         return;
     }
-    int maxV = static_cast<int>(std::floor((n + 1 - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    if(m>=n+1) {
-        for(k = -1; k<=1; k++) {
-            if(k==0) {
-                continue;
-            }
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                    sequence_r[current_j-1] =  k;
-                    getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum+ k, r_solutions);
-                }
-            }
-        }
-    } else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if( (k+currentSum <= seq_11) && (std::abs(k)<=maxV)){
-                    sequence_r[current_j-1] =  k;
-                    getSolutionToR11(n, m, seq_11, current_j+1, sequence_r, currentSum+ k, r_solutions);
-                }
-            }
-        }
-    }
-
+    sequence_r[current_j-1] = 1;
+    find_r11(n,m,r11, current_j+1, sequence_r, currentSum+1, r_solutions);
+    sequence_r[current_j-1] = -1;
+    find_r11(n,m,r11, current_j+1, sequence_r, currentSum-1, r_solutions);
 }
 
-void getSolutionToP11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int>>& p_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
+void find_p11(int n, int m, int p11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int>>& p_solutions) {
+    if(current_j == m) {
+        sequence_p[current_j-1] =0;
+        if(currentSum == p11) {
             p_solutions.push_back(sequence_p);
         }
         return;
     }
-    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    if(m>=n+1) {
-        if(current_j == m) {
-            sequence_p[current_j-1] =  0;
-            if(currentSum == seq_11) {
-                p_solutions.push_back(sequence_p);
-            }
-            return;
-        }
-        for(k = -1; k<=1; k++) {
-            if(k==0) {
-                continue;
-            }
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                    sequence_p[current_j-1] =  k;
-                    getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum+ k, p_solutions);
-                }
-            }
-        }
-    } else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                    sequence_p[current_j-1] =  k;
-                    getSolutionToP11(n, m, seq_11, current_j+1, sequence_p, currentSum+ k, p_solutions);
-                }
-            }
-        }
-    }
+    sequence_p[current_j-1] = 1;
+    find_p11(n,m,p11, current_j+1, sequence_p, currentSum+1, p_solutions);
+    sequence_p[current_j-1] = -1;
+    find_p11(n,m,p11, current_j+1, sequence_p, currentSum-1, p_solutions);
 }
 
-void getSolutionToQ11(int n, int m, int seq_11, int current_j, std::vector<int>& sequence_q, int currentSum, std::vector<std::vector<int>>& q_solutions) {
-    if(current_j > m) {
-        if(currentSum == seq_11) {
+void find_q11(int n, int m, int q11, int current_j, std::vector<int>& sequence_q, int currentSum, std::vector<std::vector<int>>& q_solutions) {
+    if(current_j == m) {
+        sequence_q[current_j-1] =0;
+        if(currentSum == q11) {
             q_solutions.push_back(sequence_q);
         }
         return;
     }
-    int maxV = static_cast<int>(std::floor((n - current_j) / m) + 1);
-    bool isOdd = (maxV % 2 != 0);
-    int k;
-    if(m>=n+1) {
-        if(current_j == m) {
-            sequence_q[current_j-1] =  0;
-            if(currentSum == seq_11) {
-                q_solutions.push_back(sequence_q);
-            }
-            return;
-        }
-        for(k = -1; k<=1; k++) {
-            if(k==0) {
-                continue;
-            }
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                    sequence_q[current_j-1] =  k;
-                    getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum+ k, q_solutions);
-                }
-            }
-        }
-
-    } else {
-        for(k = -maxV; k<=maxV; k++) {
-            if( (isOdd && (k%2 != 0)) || (!isOdd && (k%2 == 0))) {
-                if((k+currentSum <= seq_11) &&(std::abs(k)<=maxV)){
-                    sequence_q[current_j-1] =  k;
-                    getSolutionToQ11(n, m, seq_11, current_j+1, sequence_q, currentSum+ k, q_solutions);
-                }
-            }
-        }
-    }
+    sequence_q[current_j-1] = 1;
+    find_q11(n,m,q11, current_j+1, sequence_q, currentSum+1, q_solutions);
+    sequence_q[current_j-1] = -1;
+    find_q11(n,m,q11, current_j+1, sequence_q, currentSum-1, q_solutions);
 }
 
 bool step2Condition3_k_r(int n, int m, std::vector<int>& sequence1, std::vector<int>& sequence2) {
@@ -572,21 +364,23 @@ bool getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
     std::vector<int> filtered_r_solutions;
     std::vector<int> filtered_p_solutions;
     std::vector<int> filtered_q_solutions;
+    find_k11(n, m, k11, 1, sequence_k, 0, k_solutions);
     if(k11!=r11) {
-        get_Solution_to_k11_r11(n, m, k11, r11, 1, 0,0,
-                                sequence_k, k_solutions, sequence_r, r_solutions);
+        find_r11(n, m, r11, 1, sequence_r, 0, r_solutions);
     } else {
-        getSolutionToK11(n, m, k11, 1, sequence_k, 0, k_solutions);
         r_solutions = k_solutions;
     }
+    find_p11(n, m, p11, 1, sequence_p, 0, p_solutions);
     if(p11!=q11) {
-        get_Solution_to_p11_q11(n,m,p11, q11, 1, 0, 0,
-                                sequence_p, p_solutions, sequence_q, q_solutions);
+        find_q11(n, m, q11, 1, sequence_q, 0, q_solutions);
     }
     else {
-        getSolutionToP11(n, m, p11, 1, sequence_p, 0, p_solutions);
         q_solutions = p_solutions;
     }
+    printf("k11 solutions found: %zu \n", k_solutions.size());
+    printf("r11 solutions found: %zu \n", r_solutions.size());
+    printf("p11 solutions found: %zu \n", p_solutions.size());
+    printf("q11 solutions found: %zu \n", q_solutions.size());
     int i, j;
     bool cond_k_r, cond_p_q;
     for(i=0; i<k_solutions.size(); i++) {
@@ -626,10 +420,10 @@ bool getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
         return false;
     }
 
-    printf("k11 solutions found: %zu \n", filtered_k_solutions.size());
-    printf("r11 solutions found: %zu \n", filtered_r_solutions.size());
-    printf("p11 solutions found: %zu \n", filtered_p_solutions.size());
-    printf("q11 solutions found: %zu \n", filtered_q_solutions.size());
+    printf("filtered k11 solutions found: %zu \n", filtered_k_solutions.size());
+    printf("filtered r11 solutions found: %zu \n", filtered_r_solutions.size());
+    printf("filtered p11 solutions found: %zu \n", filtered_p_solutions.size());
+    printf("filtered q11 solutions found: %zu \n", filtered_q_solutions.size());
     return step2_condition4(n, m, filtered_k_solutions, filtered_r_solutions, filtered_p_solutions, filtered_q_solutions,
                      k_solutions, r_solutions, p_solutions, q_solutions);
 }
@@ -685,7 +479,7 @@ void findQuadruple(int n, int m) {
         }
 
         int j;
-        for(j=2; j<=m; j++) {
+        for(j=m; j<=m; j++) {
             printf("current m=%d \n", j);
             if(getAllSolutions(n, j, k11, r11, p11, q11)){
                 printf("--------------------------------------------------------------------------\n");
@@ -700,7 +494,7 @@ void findQuadruple(int n, int m) {
 
 int main(int argc, char *argv[]) {
     int i,j;
-    int n = 9;
+    int n = 13;
 
     for(i=n; i<=n; i++) {
         int m = n+1;
