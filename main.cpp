@@ -843,15 +843,15 @@ void findQuadruple(int n, int m) {
 
 int main(int argc, char *argv[]) {
     int i,j;
-    int n = 9;
+    int n = 13;
 //    int A[] = {-1,1,-1,1,-1,-1,1,1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1};
 //    int B[] ={1,-1,-1,1,-1,-1,1,-1,-1,1,1,1,-1,1,1,1,1,-1,1,-1};
 //    int C[] ={1,-1,1,1,1,1,1,-1,1,1,1,-1,-1,1,1,-1,1,-1,-1};
 //    int D[] ={1,1,1,1,1,1,-1,-1,1,-1,1,-1,1,1,1,-1,1,1,-1};
-    int A[] = {1, 1,-1,-1, 1, 1,-1, 1,-1, 1};
-    int B[] = {1, 1, 1,-1, 1, 1,-1,-1,-1,-1};
-    int D[] = {1, 1, 1,-1, 1,-1,-1, 1, 1};
-    int C[] = {1, 1, 1, 1,-1, 1,-1, 1, 1};
+    int A[] = {1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1};
+    int B[] = {1, 1, -1, -1, 1, -1, 1, -1, 1, -1, 1, -1, -1, 1};
+    int D[] = {1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1};
+    int C[] = {1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, -1};
 //    int A[] = {1, 1, 1, 1, 1, -1};
 //    int B[] = {1, 1, -1, -1, 1, 1};
 //    int C[] = {1, 1, -1, 1, -1};
@@ -882,185 +882,185 @@ int main(int argc, char *argv[]) {
 //    }
 
 
-    for (i=1; i<=m; i++) {
-        printf("When m is: %d \n", i);
+//    for (i=1; i<=m; i++) {
+//        printf("When m is: %d \n", i);
+//        printf("Sequence A: \n");
+//        k_res = filter_array_element_by_mod(A, len_A, i, arr_res_A, 'k');
+//        if(!k_res){
+//            printf("Seq A doesn't satisfy the condition in step 2");
+//            break;
+//        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0]) && m==2) {
+//            printf("Seq A doesn't satisfy the condition in step 1");
+//            break;
+//        }
+//        nk = naf_polynomial_decomposition (0, i, arr_res_A, 'k');
+//        printf("N_K(%d)=%d\n", 0, nk);
+//        printf("Sequence B: \n");
+//        r_res = filter_array_element_by_mod(B, len_B, i, arr_res_B, 'r');
+//        if(!r_res){
+//            printf("Seq B doesn't satisfy the condition in step 2");
+//            break;
+//        } else if (arr_res_B[1] > arr_res_A[0] && m==2) {
+//            printf("Seq B doesn't satisfy the condition in step 1");
+//            break;
+//        }
+//        nr = naf_polynomial_decomposition (0, i, arr_res_B, 'r');
+//        printf("N_R(%d)=%d\n", 0, nr);
+//        printf("Sequence C: \n");
+//        p_res = filter_array_element_by_mod(C, len_C, i, arr_res_C, 'p');
+//        if(!p_res){
+//            printf("Seq C doesn't satisfy the condition in step 2");
+//            break;
+//        } else if (arr_res_C[1]>arr_res_C[0] && m==2) {
+//            printf("Seq C doesn't satisfy the condition in step 1");
+//            break;
+//        }
+//        np = naf_polynomial_decomposition (0, i, arr_res_C, 'p');
+//        printf("N_P(%d)=%d\n", 0, np);
+//        printf("Sequence D: \n");
+//        q_res = filter_array_element_by_mod(D, len_D, i, arr_res_D, 'q');
+//        if(!q_res){
+//            printf("Seq D doesn't satisfy the condition in step 2");
+//            break;
+//        } else if (arr_res_D[1] > arr_res_D[0] && m==2) {
+//            printf("Seq D doesn't satisfy the condition in step 1");
+//            break;
+//        }
+//        nq = naf_polynomial_decomposition (0, i, arr_res_D, 'q');
+//        printf("N_Q(%d)=%d\n", 0, nq);
+//        sum = nk+nr+np+nq;
+//        printf("Sum=%d\n", sum);
+//        print_sequence(arr_res_A, i, 'K');
+//        print_sequence(arr_res_B, i, 'R');
+//        print_sequence(arr_res_C, i, 'P');
+//        print_sequence(arr_res_D, i, 'Q');
+//        printf("\n");
+//        printf("\n");
+//    }
+
+    int sum_part1=0;
+    for (i=1; i<=m/2; i++) {
+        printf("When s is: %d \n", i);
         printf("Sequence A: \n");
-        k_res = filter_array_element_by_mod(A, len_A, i, arr_res_A, 'k');
+        k_res = filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
         if(!k_res){
-            printf("Seq A doesn't satisfy the condition in step 2");
+            printf("Seq A doesn't satisfy the condition in step 2\n");
             break;
-        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0]) && m==2) {
-            printf("Seq A doesn't satisfy the condition in step 1");
+        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0])) {
+            printf("Seq A doesn't satisfy the condition in step 1\n");
             break;
         }
-        nk = naf_polynomial_decomposition (0, i, arr_res_A, 'k');
+        nk = naf_polynomial_decomposition (i, m, arr_res_A, 'k');
         printf("N_K(%d)=%d\n", 0, nk);
         printf("Sequence B: \n");
-        r_res = filter_array_element_by_mod(B, len_B, i, arr_res_B, 'r');
+        r_res = filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
         if(!r_res){
-            printf("Seq B doesn't satisfy the condition in step 2");
+            printf("Seq B doesn't satisfy the condition in step 2\n");
             break;
-        } else if (arr_res_B[1] > arr_res_A[0] && m==2) {
-            printf("Seq B doesn't satisfy the condition in step 1");
+        } else if (arr_res_B[1] > arr_res_B[0]) {
+            printf("Seq B doesn't satisfy the condition in step 1\n");
             break;
         }
-        nr = naf_polynomial_decomposition (0, i, arr_res_B, 'r');
+        nr = naf_polynomial_decomposition (i, m, arr_res_B, 'r');
         printf("N_R(%d)=%d\n", 0, nr);
         printf("Sequence C: \n");
-        p_res = filter_array_element_by_mod(C, len_C, i, arr_res_C, 'p');
+        p_res = filter_array_element_by_mod(C, len_C, m, arr_res_C, 'p');
         if(!p_res){
-            printf("Seq C doesn't satisfy the condition in step 2");
+            printf("Seq C doesn't satisfy the condition in step 2\n");
             break;
-        } else if (arr_res_C[1]>arr_res_C[0] && m==2) {
-            printf("Seq C doesn't satisfy the condition in step 1");
+        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
+            printf("Seq C doesn't satisfy the condition in step 1\n");
             break;
         }
-        np = naf_polynomial_decomposition (0, i, arr_res_C, 'p');
+        np = naf_polynomial_decomposition (i, m, arr_res_C, 'p');
         printf("N_P(%d)=%d\n", 0, np);
         printf("Sequence D: \n");
-        q_res = filter_array_element_by_mod(D, len_D, i, arr_res_D, 'q');
+        q_res = filter_array_element_by_mod(D, len_D, m, arr_res_D, 'q');
         if(!q_res){
-            printf("Seq D doesn't satisfy the condition in step 2");
+            printf("Seq D doesn't satisfy the condition in step 2\n");
             break;
-        } else if (arr_res_D[1] > arr_res_D[0] && m==2) {
-            printf("Seq D doesn't satisfy the condition in step 1");
+        } else if (arr_res_D[1] > arr_res_D[0]) {
+            printf("Seq D doesn't satisfy the condition in step 1\n");
             break;
         }
-        nq = naf_polynomial_decomposition (0, i, arr_res_D, 'q');
+        nq = naf_polynomial_decomposition (i, m, arr_res_D, 'q');
         printf("N_Q(%d)=%d\n", 0, nq);
         sum = nk+nr+np+nq;
         printf("Sum=%d\n", sum);
-        print_sequence(arr_res_A, i, 'K');
-        print_sequence(arr_res_B, i, 'R');
-        print_sequence(arr_res_C, i, 'P');
-        print_sequence(arr_res_D, i, 'Q');
+        print_sequence(arr_res_A, m, 'K');
+        print_sequence(arr_res_B, m, 'R');
+        print_sequence(arr_res_C, m, 'P');
+        print_sequence(arr_res_D, m, 'Q');
         printf("\n");
         printf("\n");
-    }
 
-//    int sum_part1=0;
-//    for (i=1; i<=m/2; i++) {
-//        printf("When s is: %d \n", i);
-//        printf("Sequence A: \n");
-//        k_res = filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
-//        if(!k_res){
-//            printf("Seq A doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0])) {
-//            printf("Seq A doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nk = naf_polynomial_decomposition (i, m, arr_res_A, 'k');
-//        printf("N_K(%d)=%d\n", 0, nk);
-//        printf("Sequence B: \n");
-//        r_res = filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
-//        if(!r_res){
-//            printf("Seq B doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (arr_res_B[1] > arr_res_B[0]) {
-//            printf("Seq B doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nr = naf_polynomial_decomposition (i, m, arr_res_B, 'r');
-//        printf("N_R(%d)=%d\n", 0, nr);
-//        printf("Sequence C: \n");
-//        p_res = filter_array_element_by_mod(C, len_C, m, arr_res_C, 'p');
-//        if(!p_res){
-//            printf("Seq C doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
-//            printf("Seq C doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        np = naf_polynomial_decomposition (i, m, arr_res_C, 'p');
-//        printf("N_P(%d)=%d\n", 0, np);
-//        printf("Sequence D: \n");
-//        q_res = filter_array_element_by_mod(D, len_D, m, arr_res_D, 'q');
-//        if(!q_res){
-//            printf("Seq D doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (arr_res_D[1] > arr_res_D[0]) {
-//            printf("Seq D doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nq = naf_polynomial_decomposition (i, m, arr_res_D, 'q');
-//        printf("N_Q(%d)=%d\n", 0, nq);
-//        sum = nk+nr+np+nq;
-//        printf("Sum=%d\n", sum);
-//        print_sequence(arr_res_A, m, 'K');
-//        print_sequence(arr_res_B, m, 'R');
-//        print_sequence(arr_res_C, m, 'P');
-//        print_sequence(arr_res_D, m, 'Q');
-//        printf("\n");
-//        printf("\n");
-//
-//        sum_part1 += sum;
-//    }
-//    printf("sum_part1: %d \n", sum_part1);
-//
-//    int sum_part2 = 0;
-//    for (i=1; i<=m/2; i++) {
-//        printf("When s is: %d \n", m-i);
-//        printf("Sequence A: \n");
-//        k_res = filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
-//        if(!k_res){
-//            printf("Seq A doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0])) {
-//            printf("Seq A doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nk = naf_polynomial_decomposition (m-i, m, arr_res_A, 'k');
-//        printf("N_K(%d)=%d\n", 0, nk);
-//        printf("Sequence B: \n");
-//        r_res = filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
-//        if(!r_res){
-//            printf("Seq B doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (arr_res_B[1] > arr_res_B[0]) {
-//            printf("Seq B doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nr = naf_polynomial_decomposition (m-i, m, arr_res_B, 'r');
-//        printf("N_R(%d)=%d\n", 0, nr);
-//        printf("Sequence C: \n");
-//        p_res = filter_array_element_by_mod(C, len_C, m, arr_res_C, 'p');
-//        if(!p_res){
-//            printf("Seq C doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
-//            printf("Seq C doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        np = naf_polynomial_decomposition (m-i, m, arr_res_C, 'p');
-//        printf("N_P(%d)=%d\n", 0, np);
-//        printf("Sequence D: \n");
-//        q_res = filter_array_element_by_mod(D, len_D, m, arr_res_D, 'q');
-//        if(!q_res){
-//            printf("Seq D doesn't satisfy the condition in step 2\n");
-//            break;
-//        } else if (arr_res_D[1] > arr_res_D[0]) {
-//            printf("Seq D doesn't satisfy the condition in step 1\n");
-//            break;
-//        }
-//        nq = naf_polynomial_decomposition (m-i, m, arr_res_D, 'q');
-//        printf("N_Q(%d)=%d\n", 0, nq);
-//        sum = nk+nr+np+nq;
-//        printf("Sum=%d\n", sum);
-//        print_sequence(arr_res_A, m, 'K');
-//        print_sequence(arr_res_B, m, 'R');
-//        print_sequence(arr_res_C, m, 'P');
-//        print_sequence(arr_res_D, m, 'Q');
-//        printf("\n");
-//        printf("\n");
-//        sum_part2 += sum;
-//    }
-//    printf("sum_part2: %d \n", sum_part2);
-//    if(sum_part1+sum_part2==0) {
-//        printf("step v matched\n");
-//    } else {
-//        printf("step v failed to match\n");
-//    }
+        sum_part1 += sum;
+    }
+    printf("sum_part1: %d \n", sum_part1);
+
+    int sum_part2 = 0;
+    for (i=1; i<=m/2; i++) {
+        printf("When s is: %d \n", m-i);
+        printf("Sequence A: \n");
+        k_res = filter_array_element_by_mod(A, len_A, m, arr_res_A, 'k');
+        if(!k_res){
+            printf("Seq A doesn't satisfy the condition in step 2\n");
+            break;
+        } else if (!(0<=arr_res_A[1] && arr_res_A[1]<=arr_res_A[0])) {
+            printf("Seq A doesn't satisfy the condition in step 1\n");
+            break;
+        }
+        nk = naf_polynomial_decomposition (m-i, m, arr_res_A, 'k');
+        printf("N_K(%d)=%d\n", 0, nk);
+        printf("Sequence B: \n");
+        r_res = filter_array_element_by_mod(B, len_B, m, arr_res_B, 'r');
+        if(!r_res){
+            printf("Seq B doesn't satisfy the condition in step 2\n");
+            break;
+        } else if (arr_res_B[1] > arr_res_B[0]) {
+            printf("Seq B doesn't satisfy the condition in step 1\n");
+            break;
+        }
+        nr = naf_polynomial_decomposition (m-i, m, arr_res_B, 'r');
+        printf("N_R(%d)=%d\n", 0, nr);
+        printf("Sequence C: \n");
+        p_res = filter_array_element_by_mod(C, len_C, m, arr_res_C, 'p');
+        if(!p_res){
+            printf("Seq C doesn't satisfy the condition in step 2\n");
+            break;
+        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
+            printf("Seq C doesn't satisfy the condition in step 1\n");
+            break;
+        }
+        np = naf_polynomial_decomposition (m-i, m, arr_res_C, 'p');
+        printf("N_P(%d)=%d\n", 0, np);
+        printf("Sequence D: \n");
+        q_res = filter_array_element_by_mod(D, len_D, m, arr_res_D, 'q');
+        if(!q_res){
+            printf("Seq D doesn't satisfy the condition in step 2\n");
+            break;
+        } else if (arr_res_D[1] > arr_res_D[0]) {
+            printf("Seq D doesn't satisfy the condition in step 1\n");
+            break;
+        }
+        nq = naf_polynomial_decomposition (m-i, m, arr_res_D, 'q');
+        printf("N_Q(%d)=%d\n", 0, nq);
+        sum = nk+nr+np+nq;
+        printf("Sum=%d\n", sum);
+        print_sequence(arr_res_A, m, 'K');
+        print_sequence(arr_res_B, m, 'R');
+        print_sequence(arr_res_C, m, 'P');
+        print_sequence(arr_res_D, m, 'Q');
+        printf("\n");
+        printf("\n");
+        sum_part2 += sum;
+    }
+    printf("sum_part2: %d \n", sum_part2);
+    if(sum_part1+sum_part2==0) {
+        printf("step v matched\n");
+    } else {
+        printf("step v failed to match\n");
+    }
 
 
 //    std::unordered_set<std::bitset<N_PLUS_ONE>> solution_seqs_A;
