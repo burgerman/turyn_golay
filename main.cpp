@@ -26,12 +26,12 @@ void construct_quadruple (const int a[], const int b[], int** quadruple, int n) 
 }
 
 int npaf(const int arr[], int n, int s) {
-    int i, npaf;
-    npaf = 0;
+    int i, sum;
+    sum = 0;
     for (i=0; i<n-s; i++) {
-        npaf += arr[i]*arr[i+s];
+        sum += arr[i]*arr[i+s];
     }
-    return npaf;
+    return sum;
 }
 
 int sum_arr(int arr[], int size) {
@@ -968,9 +968,6 @@ int main(int argc, char *argv[]) {
         if(!p_res){
             printf("Seq C doesn't satisfy the condition in step 2\n");
             break;
-        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
-            printf("Seq C doesn't satisfy the condition in step 1\n");
-            break;
         }
         np = naf_polynomial_decomposition (i, m, arr_res_C, 'p');
         printf("N_P(%d)=%d\n", 0, np);
@@ -1028,9 +1025,6 @@ int main(int argc, char *argv[]) {
         if(!p_res){
             printf("Seq C doesn't satisfy the condition in step 2\n");
             break;
-        } else if (!(0<=arr_res_C[1] && arr_res_C[1]<=arr_res_C[0])) {
-            printf("Seq C doesn't satisfy the condition in step 1\n");
-            break;
         }
         np = naf_polynomial_decomposition (m-i, m, arr_res_C, 'p');
         printf("N_P(%d)=%d\n", 0, np);
@@ -1061,7 +1055,17 @@ int main(int argc, char *argv[]) {
     } else {
         printf("step v failed to match\n");
     }
-
+    int npaf_sum;
+    for (i=1; i<=m; i++) {
+        npaf_sum = npaf(A, n+1, i)
+                + npaf(B, n+1, i)
+                + npaf(C, n, i)
+                + npaf(D, n, i);
+        if(npaf_sum!=0) {
+            printf("npaf_sum: %d\n", npaf_sum);
+            printf("Value of NPAF Not Zero\n");
+        }
+    }
 
 //    std::unordered_set<std::bitset<N_PLUS_ONE>> solution_seqs_A;
 //    std::unordered_set<std::bitset<N_PLUS_ONE>> solution_seqs_B;
