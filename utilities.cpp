@@ -98,14 +98,14 @@ int naf_polynomial_decomposition (int s, int m, int arr_res[], char letter) {
     return res;
 }
 
-int naf_polynomial_decomposition (int s, int m, std::vector<int>& sequence) {
-    int i;
-    int res = 0;
-    for(i=1;i<=m-s;i++) {
-        res += sequence[i-1]*sequence[i-1+s];
-    }
-    return res;
-}
+//int naf_polynomial_decomposition (int s, int m, std::vector<int>& sequence) {
+//    int i;
+//    int res = 0;
+//    for(i=1;i<=m-s;i++) {
+//        res += sequence[i-1]*sequence[i-1+s];
+//    }
+//    return res;
+//}
 
 
 bool step2_cond3_k_r(int n, int m, int sequence1[], int sequence2[]) {
@@ -148,26 +148,26 @@ bool step2_cond3_k_r(int n, int m, int sequence1[], int sequence2[]) {
     return true;
 }
 
-void print_sequence(int arr[], int len, char letter) {
-    int i;
-    printf("Sequence %c: [", letter);
-    for (i=0; i<len;i++) {
-        if(i!= len-1) {
-            printf("%d, ", arr[i]);
-        } else {
-            printf("%d]\n", arr[i]);
-        }
-    }
-}
+//void print_sequence(int arr[], int len, char letter) {
+//    int i;
+//    printf("Sequence %c: [", letter);
+//    for (i=0; i<len;i++) {
+//        if(i!= len-1) {
+//            printf("%d, ", arr[i]);
+//        } else {
+//            printf("%d]\n", arr[i]);
+//        }
+//    }
+//}
 
-void print_sequence(std::vector<int>& sequence, int len, char letter) {
-    int i;
-    printf("Sequence %c: [", letter);
-    for (i=0; i<len;i++) {
-        if(i!= len-1) {
-            printf("%d, ", sequence[i]);
-        } else {
-            printf("%d]\n", sequence[i]);
-        }
-    }
-}
+//void print_sequence(std::vector<int>& sequence, int len, char letter) {
+//    int i;
+//    printf("Sequence %c: [", letter);
+//    for (i=0; i<len;i++) {
+//        if(i!= len-1) {
+//            printf("%d, ", sequence[i]);
+//        } else {
+//            printf("%d]\n", sequence[i]);
+//        }
+//    }
+//}

@@ -1,21 +1,18 @@
 #include <iostream>
 #include <cmath>
-#include <numeric>
 #include <list>
 #include <bitset>
 #include <unordered_set>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-#include <set>
-#include <tuple>
 #include <climits>
 #include <algorithm>
-#include "utilities.h"
 #include <omp.h>
+#include <mpi.h>
+#include <numeric>
 
-int THRESHOLD_V = 1000000000;
-using VectorTuple = std::tuple<std::vector<int>, std::vector<int>, std::vector<int>, std::vector<int>>;
+
 int npaf(const int arr[], int n, int s) {
     int i, npaf;
     npaf = 0;
@@ -103,6 +100,15 @@ std::list<std::list<int>> nsoks(int nn, int kk) {
                 seq.push_front(0);
             }
         }
+    }
+    return res;
+}
+
+int naf_polynomial_decomposition (int s, int m, int* sequence) {
+    int i;
+    int res = 0;
+    for(i=1;i<=m-s;i++) {
+        res += sequence[i-1]*sequence[i-1+s];
     }
     return res;
 }
@@ -259,7 +265,17 @@ bool step2Condition3_p_q(int n, int m, std::vector<int>& sequence1, std::vector<
     return true;
 }
 
-int getSquaredSum(int m, std::vector<int>& sequence) {
+void get_subarr(int start, int m, std::vector<int>& original_arr, int* sub_arr) {
+    int i, j;
+    int end = start+m;
+    j=0;
+    for (i=start; i<end; i++) {
+        sub_arr[j] = original_arr[i];
+        j++;
+    }
+}
+
+int getSquaredSum(int m, int* sequence) {
     int sum =0;
     int i;
     for(i=0; i<m; i++) {
@@ -269,7 +285,7 @@ int getSquaredSum(int m, std::vector<int>& sequence) {
 }
 
 //int getSquaredSum(int m, std::vector<int>& sequence) {
-    // Ensure m is not larger than the sequence size
+//     Ensure m is not larger than the sequence size
 //    m = std::min(m, static_cast<int>(sequence.size()));
 //
 //    return std::accumulate(sequence.begin(), sequence.begin() + m, 0,
@@ -278,8 +294,19 @@ int getSquaredSum(int m, std::vector<int>& sequence) {
 //                           });
 //}
 
-bool step2_condition5 (int m, std::vector<int>& sequenceK, std::vector<int>& sequenceR,
-                       std::vector<int>& sequenceP, std::vector<int>& sequenceQ) {
+void print_sequence(int* sequence, int len, char letter) {
+    int i;
+    printf("Sequence %c: [", letter);
+    for (i=0; i<len;i++) {
+        if(i!= len-1) {
+            printf("%d, ", sequence[i]);
+        } else {
+            printf("%d]\n", sequence[i]);
+        }
+    }
+}
+
+int step2_condition5 (int m, int* sequenceK, int* sequenceR, int* sequenceP, int* sequenceQ) {
     int i, sum;
     for (i=1; i<=m/2; i++) {
         sum = 0;
@@ -292,215 +319,385 @@ bool step2_condition5 (int m, std::vector<int>& sequenceK, std::vector<int>& seq
         sum += naf_polynomial_decomposition (i, m, sequenceQ);
         sum += naf_polynomial_decomposition (m-i, m, sequenceQ);
         if (sum != 0) {
-            return false;
+            return 0;
         }
     }
-    return true;
+    return 1;
 }
 
-bool step2_condition4 (int n, int m, std::vector<int>& filtered_k_solutions, std::vector<int>& filtered_r_solutions,
-                              std::vector<int>& filtered_p_solutions, std::vector<int>& filtered_q_solutions,
-                              std::vector<std::vector<int>>& k_solutions,  std::vector<std::vector<int>>& r_solutions,
-                              std::vector<std::vector<int>>& p_solutions,  std::vector<std::vector<int>>& q_solutions) {
-
-    int i, j, k, l, result;
+void step2_condition4 (int n, int m, int &res, std::vector<int>& k11_solutions, std::vector<int>& r11_solutions, std::vector<int>& p11_solutions, std::vector<int>& q11_solutions, int** seq_k_r_p_q) {
+    int result;
+    int t;
     int cond = 4*n+2;
-//    std::set<VectorTuple> uniqueCombinations;
-    for (i=0; i<filtered_k_solutions.size(); i++) {
-        for(j=0; j<filtered_r_solutions.size(); j++) {
-            for(k=0; k<filtered_p_solutions.size(); k++) {
-                for(l=0; l<filtered_q_solutions.size(); l++) {
-                    auto& sequenceK = k_solutions[filtered_k_solutions[i]];
-                    auto& sequenceR = r_solutions[filtered_r_solutions[j]];
-                    auto& sequenceP = p_solutions[filtered_p_solutions[k]];
-                    auto& sequenceQ = q_solutions[filtered_q_solutions[l]];
-//                    std::sort(sequenceK.begin(), sequenceK.end());
-//                    std::sort(sequenceR.begin(), sequenceR.end());
-//                    std::sort(sequenceP.begin(), sequenceP.end());
-//                    std::sort(sequenceQ.begin(), sequenceQ.end());
-//                    if(!uniqueCombinations.insert(std::make_tuple(sequenceK, sequenceR, sequenceP, sequenceQ)).second) {
-//                        continue;
-//                    }
+    int k11_size = (int)k11_solutions.size();
+    int r11_size = (int)r11_solutions.size();
+    int p11_size = (int)p11_solutions.size();
+    int q11_size = (int)q11_solutions.size();
 
-                    result = getSquaredSum(m, sequenceK) +
-                             getSquaredSum(m, sequenceR) +
-                             getSquaredSum(m, sequenceP) +
-                             getSquaredSum(m, sequenceQ);
+    for (int i=0; i<k11_size; i+=m) {
+//        get_subarr(i, m, k11_solutions, seq_k_r_p_q[0]);
+        for (t=0; t<m; t++) {
+            seq_k_r_p_q[0][t] = k11_solutions[i+t];
+        }
+
+        printf("sequenceK: %d\n", seq_k_r_p_q[0][0]);
+        for (int j=0; j<r11_size; j+=m) {
+//            get_subarr(j, m, r11_solutions, seq_k_r_p_q[1]);
+            for (t=0; t<m; t++) {
+                seq_k_r_p_q[1][t] = r11_solutions[j+t];
+            }
+            printf("sequenceR: %d\n", seq_k_r_p_q[1][0]);
+            for(int k=0;k<p11_size; k+=m){
+//                get_subarr(k, m, p11_solutions, seq_k_r_p_q[2]);
+                for (t=0; t<m; t++) {
+                    seq_k_r_p_q[2][t] = r11_solutions[k+t];
+                }
+                printf("sequenceP: %d\n", seq_k_r_p_q[2][0]);
+                for(int l=0;l<q11_size;l+=m) {
+//                    get_subarr(l, m, q11_solutions, seq_k_r_p_q[3]);
+                    for (t=0; t<m; t++) {
+                        seq_k_r_p_q[3][t] = r11_solutions[l+t];
+                    }
+                    printf("sequenceQ: %d\n", seq_k_r_p_q[3][0]);
+                    result = getSquaredSum(m, seq_k_r_p_q[0]) +
+                             getSquaredSum(m, seq_k_r_p_q[1]) +
+                             getSquaredSum(m, seq_k_r_p_q[2]) +
+                             getSquaredSum(m, seq_k_r_p_q[3]);
                     if (result == cond) {
-                        bool cond5 = step2_condition5(m, sequenceK,sequenceR,sequenceP,sequenceQ);
-                        if (cond5) {
-                                if(m==n+1) {
-                                    print_sequence(sequenceK, m, 'K');
-                                    print_sequence(sequenceR, m, 'R');
-                                    print_sequence(sequenceP, m, 'P');
-                                    print_sequence(sequenceQ, m, 'Q');
-                                    printf("\n");
-                                }
-                                return true;
-                            }
+                        int cond5 = step2_condition5(m, seq_k_r_p_q[0],seq_k_r_p_q[1],seq_k_r_p_q[2],seq_k_r_p_q[3]);
+                        if (cond5==1) {
+                            print_sequence(seq_k_r_p_q[0], m, 'K');
+                            print_sequence(seq_k_r_p_q[1], m, 'R');
+                            print_sequence(seq_k_r_p_q[2], m, 'P');
+                            print_sequence(seq_k_r_p_q[3], m, 'Q');
+                            printf("\n");
+                            res = 1;
+                            return;
                         }
                     }
                 }
             }
         }
-    return false;
+    }
 }
 
-bool getAllSolutions(int n, int m, int k11, int r11, int p11, int q11) {
-    printf("k11: %d\n", k11);
-    printf("r11: %d\n", r11);
-    printf("p11: %d\n", p11);
-    printf("q11: %d\n", q11);
-    std::vector<int> sequence_k(m);
-    std::vector<int> sequence_r(m);
-    std::vector<int> sequence_p(m);
-    std::vector<int> sequence_q(m);
-    std::vector<std::vector<int>> k_solutions;
-    std::vector<std::vector<int>> r_solutions;
-    std::vector<std::vector<int>> p_solutions;
-    std::vector<std::vector<int>> q_solutions;
-
-    std::vector<int> filtered_k_solutions;
-    std::vector<int> filtered_r_solutions;
-    std::vector<int> filtered_p_solutions;
-    std::vector<int> filtered_q_solutions;
-    find_k11(n, m, k11, 1, sequence_k, 0, k_solutions);
-    if(k11!=r11) {
-        find_r11(n, m, r11, 1, sequence_r, 0, r_solutions);
-    } else {
-        r_solutions = k_solutions;
-    }
-    find_p11(n, m, p11, 1, sequence_p, 0, p_solutions);
-    if(p11!=q11) {
-        find_q11(n, m, q11, 1, sequence_q, 0, q_solutions);
-    }
-    else {
-        q_solutions = p_solutions;
-    }
-    printf("k11 solutions found: %zu \n", k_solutions.size());
-    printf("r11 solutions found: %zu \n", r_solutions.size());
-    printf("p11 solutions found: %zu \n", p_solutions.size());
-    printf("q11 solutions found: %zu \n", q_solutions.size());
+void flatten_solutions(std::vector<int>& filtered_indices, std::vector<std::vector<int>>& solutions, std::vector<int>& sent_solutions) {
     int i, j;
-    bool cond_k_r, cond_p_q;
-    for(i=0; i<k_solutions.size(); i++) {
-        for(j=0; j<r_solutions.size(); j++) {
-            cond_k_r = step2Condition3_k_r(n,m, k_solutions[i], r_solutions[j]);
-            if(cond_k_r) {
-                filtered_k_solutions.push_back(i);
-                filtered_r_solutions.push_back(j);
-            }
+    for (i=0; i<filtered_indices.size(); i++) {
+        auto seq = solutions[filtered_indices[i]];
+        for(j=0; j<seq.size(); j++) {
+            sent_solutions.push_back(seq[j]);
         }
     }
-    for(i=0; i<p_solutions.size(); i++) {
-        for(j=0; j<q_solutions.size(); j++) {
-            cond_p_q = step2Condition3_p_q(n,m, p_solutions[i], q_solutions[j]);
-            if(cond_p_q) {
-                filtered_p_solutions.push_back(i);
-                filtered_q_solutions.push_back(j);
-            }
-        }
-    }
-    removeDuplicates(filtered_k_solutions);
-    if(k11==r11) {
-        filtered_r_solutions = filtered_k_solutions;
-    }
-    else {
-        removeDuplicates(filtered_r_solutions);
-    }
-    removeDuplicates(filtered_p_solutions);
-    if(p11 == q11) {
-        filtered_q_solutions = filtered_p_solutions;
-    }
-    else {
-        removeDuplicates(filtered_q_solutions);
-    }
-
-    if(filtered_k_solutions.size()*filtered_r_solutions.size()*filtered_p_solutions.size()* filtered_q_solutions.size()>THRESHOLD_V) {
-        return false;
-    }
-
-    printf("filtered k11 solutions found: %zu \n", filtered_k_solutions.size());
-    printf("filtered r11 solutions found: %zu \n", filtered_r_solutions.size());
-    printf("filtered p11 solutions found: %zu \n", filtered_p_solutions.size());
-    printf("filtered q11 solutions found: %zu \n", filtered_q_solutions.size());
-    return step2_condition4(n, m, filtered_k_solutions, filtered_r_solutions, filtered_p_solutions, filtered_q_solutions,
-                     k_solutions, r_solutions, p_solutions, q_solutions);
 }
 
-void findQuadruple(int n, int m) {
-    int i, k11, r11, p11, q11;
+
+int main(int argc, char *argv[]) {
+    MPI_Init(&argc, &argv);
+    int i, j, k, l, t, k11, r11, p11, q11, my_rank, p, p_rank;
+    int sum_result, naf_sum, cond5;
+    int ** seq_k_r_p_q;
+    int res, global_found;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &p);
+    if (p < 2) {
+        printf("This program requires at least 2 processes.\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    int n = 13;
+    int m = n+1;
+    printf("n=%d\n", n);
     int quadruple_sum = 4*n+2;
     printf("4*n+2 = %d\n", quadruple_sum);
     int sums[4];
     // check 4n+2
+    std::vector<int> received_k11s;
+    std::vector<int> received_r11s;
+    std::vector<int> received_p11s;
+    std::vector<int> received_q11s;
+    int k11_size, r11_size, p11_size, q11_size;
     std::list< std::list<int>> result = nsoks(quadruple_sum, 4);
     for(auto itr = result.begin(); itr != result.end(); itr++) {
-        i=0;
-        std::vector<int> evens;
-        std::vector<int> odds;
-        std::list<int>& seq = *itr;
-        printf("NSOKS: ");
-        for(int& e: seq) {
-            sums[i++] = e;
-            printf("%d ", e);
-            if(e%2==0) {
-                evens.push_back(e);
-            } else {
-                odds.push_back(e);
-            }
-        }
-        printf("\n");
-        if(evens.size() != 2 || odds.size()!=2) {
-            continue;
-        }
-        if(evens[0] < evens[1]) {
-            evens[0] = evens[0] ^ evens[1];
-            evens[1] = evens[0] ^ evens[1];
-            evens[0] = evens[0] ^ evens[1];
-        }
-        if(odds[0] < odds[1]) {
-            odds[0] = odds[0] ^ odds[1];
-            odds[1] = odds[0] ^ odds[1];
-            odds[0] = odds[0] ^ odds[1];
-        }
-        if(n%2==0) {
-            printf("n is a even\n");
-            k11 = odds[0];
-            r11 = odds[1];
-            p11 = evens[0];
-            q11 = evens[1];
-        } else {
-            printf("n is an odd\n");
-            k11 = evens[0];
-            r11 = evens[1];
-            p11 = odds[0];
-            q11 = odds[1];
-        }
+        res = 0;
+        global_found = 0;
 
-        int j;
-        for(j=m; j<=m; j++) {
-            printf("current m=%d \n", j);
-            if(getAllSolutions(n, j, k11, r11, p11, q11)){
-                printf("--------------------------------------------------------------------------\n");
-                printf("\n");
+        if(my_rank == 0) {
+            j=0;
+            std::vector<int> evens;
+            std::vector<int> odds;
+            std::list<int>& seq = *itr;
+            printf("NSOKS: ");
+            for(int& e: seq) {
+                sums[j++] = e;
+                printf("%d ", e);
+                if(e%2==0) {
+                    evens.push_back(e);
+                } else {
+                    odds.push_back(e);
+                }
+            }
+            printf("\n");
+            if(evens.size() != 2 || odds.size()!=2) {
                 continue;
+            }
+            if(evens[0] < evens[1]) {
+                evens[0] = evens[0] ^ evens[1];
+                evens[1] = evens[0] ^ evens[1];
+                evens[0] = evens[0] ^ evens[1];
+            }
+            if(odds[0] < odds[1]) {
+                odds[0] = odds[0] ^ odds[1];
+                odds[1] = odds[0] ^ odds[1];
+                odds[0] = odds[0] ^ odds[1];
+            }
+            if(n%2==0) {
+                printf("n is a even\n");
+                k11 = odds[0];
+                r11 = odds[1];
+                p11 = evens[0];
+                q11 = evens[1];
             } else {
-                break;
+                printf("n is an odd\n");
+                k11 = evens[0];
+                r11 = evens[1];
+                p11 = odds[0];
+                q11 = odds[1];
             }
         }
-    }
-}
+        if(my_rank==0) {
+            std::vector<int> send_solutions;
+            printf("current m=%d \n", m);
+            printf("k11: %d\n", k11);
+            printf("r11: %d\n", r11);
+            printf("p11: %d\n", p11);
+            printf("q11: %d\n", q11);
+            std::vector<int> sequence_k(m);
+            std::vector<int> sequence_r(m);
+            std::vector<int> sequence_p(m);
+            std::vector<int> sequence_q(m);
+            std::vector<std::vector<int>> k_solutions;
+            std::vector<std::vector<int>> r_solutions;
+            std::vector<std::vector<int>> p_solutions;
+            std::vector<std::vector<int>> q_solutions;
 
-int main(int argc, char *argv[]) {
-    int i,j;
-    int n = 13;
+            std::vector<int> filtered_k_solutions;
+            std::vector<int> filtered_r_solutions;
+            std::vector<int> filtered_p_solutions;
+            std::vector<int> filtered_q_solutions;
+            find_k11(n, m, k11, 1, sequence_k, 0, k_solutions);
+            if(k11!=r11) {
+                find_r11(n, m, r11, 1, sequence_r, 0, r_solutions);
+            } else {
+                r_solutions = k_solutions;
+            }
+            find_p11(n, m, p11, 1, sequence_p, 0, p_solutions);
+            if(p11!=q11) {
+                find_q11(n, m, q11, 1, sequence_q, 0, q_solutions);
+            }
+            else {
+                q_solutions = p_solutions;
+            }
 
-    for(i=n; i<=n; i++) {
-        int m = n+1;
-        printf("n=%d\n", i);
-        findQuadruple(i, m);
-        printf("--------------------------------------------------------------------------\n");
+            bool cond_k_r, cond_p_q;
+            for(l=0; l<k_solutions.size(); l++) {
+                for(i=0; i<r_solutions.size(); i++) {
+                    cond_k_r = step2Condition3_k_r(n,m, k_solutions[l], r_solutions[i]);
+                    if(cond_k_r) {
+                        filtered_k_solutions.push_back(l);
+                        filtered_r_solutions.push_back(i);
+                    }
+                }
+            }
+            for(l=0; l<p_solutions.size(); l++) {
+                for(i=0; i<q_solutions.size(); i++) {
+                    cond_p_q = step2Condition3_p_q(n,m, p_solutions[l], q_solutions[i]);
+                    if(cond_p_q) {
+                        filtered_p_solutions.push_back(l);
+                        filtered_q_solutions.push_back(i);
+                    }
+                }
+            }
+            removeDuplicates(filtered_k_solutions);
+            if(k11==r11) {
+                filtered_r_solutions = filtered_k_solutions;
+            }
+            else {
+                removeDuplicates(filtered_r_solutions);
+            }
+            removeDuplicates(filtered_p_solutions);
+            if(p11 == q11) {
+                filtered_q_solutions = filtered_p_solutions;
+            }
+            else {
+                removeDuplicates(filtered_q_solutions);
+            }
+            printf("k11 solutions found: %zu \n", filtered_k_solutions.size());
+            printf("r11 solutions found: %zu \n", filtered_r_solutions.size());
+            printf("p11 solutions found: %zu \n", filtered_p_solutions.size());
+            printf("q11 solutions found: %zu \n", filtered_q_solutions.size());
+
+
+            k11_size = (int)filtered_k_solutions.size()*m;
+            r11_size = (int)filtered_r_solutions.size()*m;
+            p11_size = (int)filtered_p_solutions.size()*m;
+            q11_size = (int)filtered_q_solutions.size()*m;
+            std::vector<int> sent_k11s;
+            std::vector<int> sent_r11s;
+            std::vector<int> sent_p11s;
+            std::vector<int> sent_q11s;
+            int sent_q_size = (int)filtered_q_solutions.size()/(p-1);
+            sent_q_size = sent_q_size*m;
+            flatten_solutions(filtered_k_solutions, k_solutions, sent_k11s);
+            flatten_solutions(filtered_r_solutions, r_solutions, sent_r11s);
+            flatten_solutions(filtered_p_solutions, p_solutions, sent_p11s);
+            flatten_solutions(filtered_q_solutions, q_solutions, sent_q11s);
+            int offset;
+            int residual_size;
+            for (p_rank=1; p_rank<p;p_rank++) {
+                MPI_Send(&k11_size, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                MPI_Send(&r11_size, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                MPI_Send(&p11_size, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                MPI_Send(sent_k11s.data(), k11_size, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                MPI_Send(sent_r11s.data(), r11_size, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                MPI_Send(sent_p11s.data(), p11_size, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                offset = p_rank-1;
+                if(p_rank!=p-1) {
+                    MPI_Send(&sent_q_size, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                    MPI_Send(sent_q11s.data()+offset*sent_q_size, sent_q_size, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                } else {
+                    residual_size = q11_size - offset*sent_q_size;
+                    printf("residual_size: %d \n", residual_size);
+                    MPI_Send(&residual_size, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                    MPI_Send(sent_q11s.data()+offset*sent_q_size, residual_size, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+                }
+            }
+            std::vector<std::vector<int>>().swap(k_solutions);
+            std::vector<std::vector<int>>().swap(r_solutions);
+            std::vector<std::vector<int>>().swap(p_solutions);
+            std::vector<std::vector<int>>().swap(q_solutions);
+            std::vector<int>().swap(filtered_k_solutions);
+            std::vector<int>().swap(filtered_r_solutions);
+            std::vector<int>().swap(filtered_p_solutions);
+            std::vector<int>().swap(filtered_q_solutions);
+            std::vector<int>().swap(sent_k11s);
+            std::vector<int>().swap(sent_r11s);
+            std::vector<int>().swap(sent_p11s);
+            std::vector<int>().swap(sent_q11s);
+        } else {
+            MPI_Recv(&k11_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            printf("k11 solutions received: %d \n", k11_size);
+            MPI_Recv(&r11_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            printf("r11 solutions received: %d \n", r11_size);
+            MPI_Recv(&p11_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            printf("p11 solutions received: %d \n", p11_size);
+            received_k11s.reserve(k11_size);
+            received_r11s.reserve(r11_size);
+            received_p11s.reserve(p11_size);
+            MPI_Recv(received_k11s.data(), k11_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(received_r11s.data(), r11_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(received_p11s.data(), p11_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&q11_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            printf("q11 solutions received: %d \n", q11_size);
+            received_q11s.reserve(q11_size);
+            MPI_Recv(received_q11s.data(), q11_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            seq_k_r_p_q = (int **)malloc(4 * sizeof(int *));
+            for(t=0; t<4; t++) {
+                seq_k_r_p_q[t] = (int *)malloc(m * sizeof(int));
+            }
+            for (i=0; i<k11_size; i+=m) {
+                if(res==1){
+                    break;
+                }
+                for (t=0; t<m; t++) {
+                    seq_k_r_p_q[0][t] = received_k11s[i+t];
+                }
+
+                for (j=0; j<r11_size; j+=m) {
+                    if(res==1){
+                        break;
+                    }
+                    for (t=0; t<m; t++) {
+                        seq_k_r_p_q[1][t] = received_r11s[j+t];
+                    }
+
+                    for(k=0;k<p11_size; k+=m){
+                        if(res==1){
+                            break;
+                        }
+                        for (t=0; t<m; t++) {
+                            seq_k_r_p_q[2][t] = received_p11s[k+t];
+                        }
+
+                        for(l=0;l<q11_size;l+=m) {
+
+                            for (t=0; t<m; t++) {
+                                seq_k_r_p_q[3][t] = received_q11s[l+t];
+                            }
+                            //condition 4
+                            sum_result = 0;
+                            for(t=0; t<m; t++) {
+                                sum_result += seq_k_r_p_q[0][t] * seq_k_r_p_q[0][t];
+                                sum_result += seq_k_r_p_q[1][t] * seq_k_r_p_q[1][t];
+                                sum_result += seq_k_r_p_q[2][t] * seq_k_r_p_q[2][t];
+                                sum_result += seq_k_r_p_q[3][t] * seq_k_r_p_q[3][t];
+                            }
+
+                            if (sum_result == quadruple_sum) {
+                                cond5=1;
+                                for (t=1; t<=m/2; t++) {
+                                    naf_sum = 0;
+                                    naf_sum += naf_polynomial_decomposition (t, m, seq_k_r_p_q[0]);
+                                    naf_sum += naf_polynomial_decomposition (m-t, m, seq_k_r_p_q[0]);
+                                    naf_sum += naf_polynomial_decomposition (t, m, seq_k_r_p_q[1]);
+                                    naf_sum += naf_polynomial_decomposition (m-t, m, seq_k_r_p_q[1]);
+                                    naf_sum += naf_polynomial_decomposition (t, m, seq_k_r_p_q[2]);
+                                    naf_sum += naf_polynomial_decomposition (m-t, m, seq_k_r_p_q[2]);
+                                    naf_sum += naf_polynomial_decomposition (t, m, seq_k_r_p_q[3]);
+                                    naf_sum += naf_polynomial_decomposition (m-t, m, seq_k_r_p_q[3]);
+                                    if (naf_sum != 0) {
+                                        cond5 = 0;
+                                        break;
+                                    }
+                                }
+                                if (cond5==1) {
+                                    printf("process %d found a solution as below:\n", my_rank);
+                                    print_sequence(seq_k_r_p_q[0], m, 'K');
+                                    print_sequence(seq_k_r_p_q[1], m, 'R');
+                                    print_sequence(seq_k_r_p_q[2], m, 'P');
+                                    print_sequence(seq_k_r_p_q[3], m, 'Q');
+                                    printf("\n");
+                                    res = 1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for(t=0; t<4; t++) {
+                free(seq_k_r_p_q[t]);
+            }
+            free(seq_k_r_p_q);
+        }
+        if(my_rank!=0) {
+            MPI_Send(&res, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        } else {
+            for(p_rank=1; p_rank<p;p_rank++) {
+                MPI_Recv(&global_found, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+                res |= global_found;
+            }
+            global_found = res;
+        }
+
+        if(my_rank!=0) {
+            MPI_Recv(&global_found, 1, MPI_INT, 0, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        } else {
+            for(p_rank=1; p_rank<p;p_rank++) {
+                MPI_Send(&res, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
+            }
+        }
+        if(global_found==1) break;
     }
+    MPI_Finalize();
     return 0;
 }
