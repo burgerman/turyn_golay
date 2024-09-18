@@ -395,7 +395,7 @@ void flatten_solutions(std::vector<int>& filtered_indices, std::vector<std::vect
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     int i, j, k, l, t, c, k11, r11, p11, q11, my_rank, p, p_rank;
-    int sum_result, naf_sum, cond5;
+    int sum_result, naf_sum, cond5, npaf_sum, step4_cond;
     int s1, s2;
     int ** seq_k_r_p_q;
     int res, global_found;
@@ -667,42 +667,59 @@ int main(int argc, char *argv[]) {
                                     }
                                 }
                                 if (cond5==1) {
-                                    printf("process %d found a solution as below:\n", my_rank);
-                                    printf("Sequence k11: [");
-                                    for (t=0; t<m;t++) {
-                                        if(t!= m-1) {
-                                            printf("%d, ", seq_k_r_p_q[0][t]);
-                                        } else {
-                                            printf("%d]\n", seq_k_r_p_q[0][t]);
+                                    step4_cond = 1;
+                                    for(t=1; t<m; t++) {
+                                        s1 = t;
+                                        npaf_sum = 0;
+                                        for(c=1;c<=m-s1;c++) {
+                                            npaf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s1];
+                                            npaf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s1];
+                                            npaf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s1];
+                                            npaf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s1];
+                                        }
+                                        if(npaf_sum!=0) {
+                                            step4_cond =0;
+                                            break;
                                         }
                                     }
-                                    printf("Sequence r11: [");
-                                    for (t=0; t<m;t++) {
-                                        if(t!= m-1) {
-                                            printf("%d, ", seq_k_r_p_q[1][t]);
-                                        } else {
-                                            printf("%d]\n", seq_k_r_p_q[1][t]);
+                                    if(step4_cond) {
+                                        printf("process %d found a solution as below:\n", my_rank);
+                                        printf("Sequence k11: [");
+                                        for (t=0; t<m;t++) {
+                                            if(t!= m-1) {
+                                                printf("%d, ", seq_k_r_p_q[0][t]);
+                                            } else {
+                                                printf("%d]\n", seq_k_r_p_q[0][t]);
+                                            }
                                         }
-                                    }
-                                    printf("Sequence p11: [");
-                                    for (t=0; t<m;t++) {
-                                        if(t!= m-1) {
-                                            printf("%d, ", seq_k_r_p_q[2][t]);
-                                        } else {
-                                            printf("%d]\n", seq_k_r_p_q[2][t]);
+                                        printf("Sequence r11: [");
+                                        for (t=0; t<m;t++) {
+                                            if(t!= m-1) {
+                                                printf("%d, ", seq_k_r_p_q[1][t]);
+                                            } else {
+                                                printf("%d]\n", seq_k_r_p_q[1][t]);
+                                            }
                                         }
-                                    }
-                                    printf("Sequence q11: [");
-                                    for (t=0; t<m;t++) {
-                                        if(t!= m-1) {
-                                            printf("%d, ", seq_k_r_p_q[3][t]);
-                                        } else {
-                                            printf("%d]\n", seq_k_r_p_q[3][t]);
+                                        printf("Sequence p11: [");
+                                        for (t=0; t<m;t++) {
+                                            if(t!= m-1) {
+                                                printf("%d, ", seq_k_r_p_q[2][t]);
+                                            } else {
+                                                printf("%d]\n", seq_k_r_p_q[2][t]);
+                                            }
                                         }
+                                        printf("Sequence q11: [");
+                                        for (t=0; t<m;t++) {
+                                            if(t!= m-1) {
+                                                printf("%d, ", seq_k_r_p_q[3][t]);
+                                            } else {
+                                                printf("%d]\n", seq_k_r_p_q[3][t]);
+                                            }
+                                        }
+                                        printf("\n");
+                                        res = 1;
+                                        break;
                                     }
-                                    printf("\n");
-                                    res = 1;
-                                    break;
                                 } else {
                                     continue;
                                 }
