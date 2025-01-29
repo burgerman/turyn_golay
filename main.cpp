@@ -11,6 +11,7 @@
 #include <omp.h>
 #include <mpi.h>
 #include <numeric>
+#include <set>
 
 
 int npaf(const int arr[], int n, int s) {
@@ -35,6 +36,7 @@ int iquo(int n, int k, int &r) {
 }
 
 const int DEFAULT_MAX_SQ = INT_MAX;
+const int THRESHOLD = 600;
 std::unordered_map<std::string, std::list<std::list<int>>> memo;
 
 std::list< std::list<int>> nsoksAUX(int n, int k, int maxsq = DEFAULT_MAX_SQ) {
@@ -128,7 +130,8 @@ void removeDuplicates(std::vector<int>& vec) {
     vec.swap(result);
 }
 
-void find_k11(int n, int m, int k11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int>>& k_solutions) {
+void find_k11(int n, int m, int k11, int current_j, std::vector<int>& sequence_k, int currentSum, std::vector<std::vector<int> >& k_solutions) {
+    if(k_solutions.size()>THRESHOLD) return;
     if(current_j > m) {
         if(currentSum == k11) {
             k_solutions.push_back(sequence_k);
@@ -141,7 +144,8 @@ void find_k11(int n, int m, int k11, int current_j, std::vector<int>& sequence_k
     find_k11(n,m,k11, current_j+1, sequence_k, currentSum-1, k_solutions);
 }
 
-void find_r11(int n, int m, int r11, int current_j, std::vector<int>& sequence_r, int currentSum, std::vector<std::vector<int>>& r_solutions) {
+void find_r11(int n, int m, int r11, int current_j, std::vector<int>& sequence_r, int currentSum, std::vector<std::vector<int> >& r_solutions) {
+    if(r_solutions.size()>THRESHOLD) return;
     if(current_j > m) {
         if(currentSum == r11) {
             r_solutions.push_back(sequence_r);
@@ -154,10 +158,11 @@ void find_r11(int n, int m, int r11, int current_j, std::vector<int>& sequence_r
     find_r11(n,m,r11, current_j+1, sequence_r, currentSum-1, r_solutions);
 }
 
-void find_p11(int n, int m, int p11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int>>& p_solutions) {
+void find_p11(int n, int m, int p11, int current_j, std::vector<int>& sequence_p, int currentSum, std::vector<std::vector<int> >& p_solutions) {
+    if(p_solutions.size()>THRESHOLD) return;
     if(current_j == m) {
-        sequence_p[current_j-1] =0;
         if(currentSum == p11) {
+            sequence_p[current_j-1] =0;
             p_solutions.push_back(sequence_p);
         }
         return;
@@ -168,10 +173,11 @@ void find_p11(int n, int m, int p11, int current_j, std::vector<int>& sequence_p
     find_p11(n,m,p11, current_j+1, sequence_p, currentSum-1, p_solutions);
 }
 
-void find_q11(int n, int m, int q11, int current_j, std::vector<int>& sequence_q, int currentSum, std::vector<std::vector<int>>& q_solutions) {
+void find_q11(int n, int m, int q11, int current_j, std::vector<int>& sequence_q, int currentSum, std::vector<std::vector<int> >& q_solutions) {
+    if(q_solutions.size()>THRESHOLD) return;
     if(current_j == m) {
-        sequence_q[current_j-1] =0;
         if(currentSum == q11) {
+            sequence_q[current_j-1] =0;
             q_solutions.push_back(sequence_q);
         }
         return;
@@ -405,7 +411,7 @@ int main(int argc, char *argv[]) {
         printf("This program requires at least 2 processes.\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
-    int n = 13;
+    int n = 19;
     int m = n+1;
     printf("n=%d\n", n);
     int quadruple_sum = 4*n+2;
@@ -485,6 +491,7 @@ int main(int argc, char *argv[]) {
             std::vector<int> filtered_r_solutions;
             std::vector<int> filtered_p_solutions;
             std::vector<int> filtered_q_solutions;
+
             find_k11(n, m, k11, 1, sequence_k, 0, k_solutions);
             if(k11!=r11) {
                 find_r11(n, m, r11, 1, sequence_r, 0, r_solutions);
@@ -634,97 +641,100 @@ int main(int argc, char *argv[]) {
                             for (t=0; t<m; t++) {
                                 seq_k_r_p_q[3][t] = received_q11s[l+t];
                             }
-                            //condition 4
-                            sum_result = 0;
-                            for(t=0; t<m; t++) {
-                                sum_result += seq_k_r_p_q[0][t] * seq_k_r_p_q[0][t];
-                                sum_result += seq_k_r_p_q[1][t] * seq_k_r_p_q[1][t];
-                                sum_result += seq_k_r_p_q[2][t] * seq_k_r_p_q[2][t];
-                                sum_result += seq_k_r_p_q[3][t] * seq_k_r_p_q[3][t];
-                            }
 
-                            if (sum_result == quadruple_sum) {
-                                cond5=1;
-                                for (t=1; t<=m/2; t++) {
-                                    naf_sum = 0;
-                                    s1 = t;
-                                    s2 = m-t;
-                                    for(c=1;c<=m-s1;c++) {
-                                        naf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s1];
-                                        naf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s1];
-                                        naf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s1];
-                                        naf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s1];
-                                    }
-                                    for(c=1;c<=m-s2;c++) {
-                                        naf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s2];
-                                        naf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s2];
-                                        naf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s2];
-                                        naf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s2];
-                                    }
-                                    if (naf_sum != 0) {
-                                        cond5 = 0;
-                                        break;
-                                    }
+                            step4_cond = 1;
+                            for(t=1; t<m; t++) {
+                                s1 = t;
+                                npaf_sum = 0;
+                                for(c=1;c<=m-s1;c++) {
+                                    npaf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s1];
+                                    npaf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s1];
+                                    npaf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s1];
+                                    npaf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s1];
                                 }
-                                if (cond5==1) {
-                                    step4_cond = 1;
-                                    for(t=1; t<m; t++) {
+                                if(npaf_sum!=0) {
+                                    step4_cond =0;
+                                    break;
+                                }
+                            }
+                            if(step4_cond==1) {
+                                //condition 4
+                                sum_result = 0;
+                                for(t=0; t<m; t++) {
+                                    sum_result += seq_k_r_p_q[0][t] * seq_k_r_p_q[0][t];
+                                    sum_result += seq_k_r_p_q[1][t] * seq_k_r_p_q[1][t];
+                                    sum_result += seq_k_r_p_q[2][t] * seq_k_r_p_q[2][t];
+                                    sum_result += seq_k_r_p_q[3][t] * seq_k_r_p_q[3][t];
+                                }
+
+                                if (sum_result == quadruple_sum) {
+                                    cond5=1;
+                                    for (t=1; t<=m/2; t++) {
+                                        naf_sum = 0;
                                         s1 = t;
-                                        npaf_sum = 0;
+                                        s2 = m-t;
                                         for(c=1;c<=m-s1;c++) {
-                                            npaf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s1];
-                                            npaf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s1];
-                                            npaf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s1];
-                                            npaf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s1];
+                                            naf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s1];
+                                            naf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s1];
+                                            naf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s1];
+                                            naf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s1];
                                         }
-                                        if(npaf_sum!=0) {
-                                            step4_cond =0;
+                                        for(c=1;c<=m-s2;c++) {
+                                            naf_sum += seq_k_r_p_q[0][c-1]*seq_k_r_p_q[0][c-1+s2];
+                                            naf_sum += seq_k_r_p_q[1][c-1]*seq_k_r_p_q[1][c-1+s2];
+                                            naf_sum += seq_k_r_p_q[2][c-1]*seq_k_r_p_q[2][c-1+s2];
+                                            naf_sum += seq_k_r_p_q[3][c-1]*seq_k_r_p_q[3][c-1+s2];
+                                        }
+                                        if (naf_sum != 0) {
+                                            cond5 = 0;
                                             break;
                                         }
                                     }
-                                    if(step4_cond) {
-                                        printf("process %d found a solution as below:\n", my_rank);
-                                        printf("Sequence k11: [");
-                                        for (t=0; t<m;t++) {
-                                            if(t!= m-1) {
-                                                printf("%d, ", seq_k_r_p_q[0][t]);
-                                            } else {
-                                                printf("%d]\n", seq_k_r_p_q[0][t]);
+                                    if (cond5==1) {
+                                        if(step4_cond==1) {
+                                            printf("process %d found a solution as below:\n", my_rank);
+                                            printf("Sequence k11: [");
+                                            for (t=0; t<m;t++) {
+                                                if(t!= m-1) {
+                                                    printf("%d, ", seq_k_r_p_q[0][t]);
+                                                } else {
+                                                    printf("%d]\n", seq_k_r_p_q[0][t]);
+                                                }
                                             }
-                                        }
-                                        printf("Sequence r11: [");
-                                        for (t=0; t<m;t++) {
-                                            if(t!= m-1) {
-                                                printf("%d, ", seq_k_r_p_q[1][t]);
-                                            } else {
-                                                printf("%d]\n", seq_k_r_p_q[1][t]);
+                                            printf("Sequence r11: [");
+                                            for (t=0; t<m;t++) {
+                                                if(t!= m-1) {
+                                                    printf("%d, ", seq_k_r_p_q[1][t]);
+                                                } else {
+                                                    printf("%d]\n", seq_k_r_p_q[1][t]);
+                                                }
                                             }
-                                        }
-                                        printf("Sequence p11: [");
-                                        for (t=0; t<m;t++) {
-                                            if(t!= m-1) {
-                                                printf("%d, ", seq_k_r_p_q[2][t]);
-                                            } else {
-                                                printf("%d]\n", seq_k_r_p_q[2][t]);
+                                            printf("Sequence p11: [");
+                                            for (t=0; t<m;t++) {
+                                                if(t!= m-1) {
+                                                    printf("%d, ", seq_k_r_p_q[2][t]);
+                                                } else {
+                                                    printf("%d]\n", seq_k_r_p_q[2][t]);
+                                                }
                                             }
-                                        }
-                                        printf("Sequence q11: [");
-                                        for (t=0; t<m;t++) {
-                                            if(t!= m-1) {
-                                                printf("%d, ", seq_k_r_p_q[3][t]);
-                                            } else {
-                                                printf("%d]\n", seq_k_r_p_q[3][t]);
+                                            printf("Sequence q11: [");
+                                            for (t=0; t<m;t++) {
+                                                if(t!= m-1) {
+                                                    printf("%d, ", seq_k_r_p_q[3][t]);
+                                                } else {
+                                                    printf("%d]\n", seq_k_r_p_q[3][t]);
+                                                }
                                             }
+                                            printf("\n");
+                                            res = 1;
+                                            break;
                                         }
-                                        printf("\n");
-                                        res = 1;
-                                        break;
+                                    } else {
+                                        continue;
                                     }
-                                } else {
+                                } else{
                                     continue;
                                 }
-                            } else{
-                                continue;
                             }
                         }
                     }
@@ -752,7 +762,6 @@ int main(int argc, char *argv[]) {
                 MPI_Send(&res, 1, MPI_INT, p_rank, 0, MPI_COMM_WORLD);
             }
         }
-        MPI_Barrier(MPI_COMM_WORLD);
         if(global_found==1) break;
     }
     MPI_Finalize();
