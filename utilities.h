@@ -9,6 +9,41 @@
 #include <string>
 #include <unordered_map>
 #include <climits>
+#include <array>
+
+/**
+ * @brief Structure to hold precomputed PAF contribution vector.
+ * For length m, we care about shifts 1 to m/2.
+ */
+struct PAFVector {
+    std::vector<int> values;
+    
+    bool operator==(const PAFVector& other) const {
+        return values == other.values;
+    }
+};
+
+/**
+ * @brief Hash function for PAFVector to enable use in unordered_map.
+ */
+struct PAFVectorHash {
+    std::size_t operator()(const PAFVector& v) const {
+        std::size_t seed = 0;
+        for (int val : v.values) {
+            seed ^= std::hash<int>{}(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+
+/**
+ * @brief Structure representing a sequence candidate with its precomputed properties.
+ */
+struct SequenceCandidate {
+    std::vector<int> seq;
+    int squaredSum;
+    PAFVector pafContrib;
+};
 
 /**
  * @brief Filters an array of integers by a modulo condition and stores the result.

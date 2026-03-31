@@ -242,67 +242,105 @@ bool step2_condition5(int m, const std::vector<int>& sequenceK, const std::vecto
 }
 
 /**
- * Core search logic:
- * 1. Generates candidate sequences for K, R, P, Q based on target sums.
- * 2. Prunes combinations using condition 3.
- * 3. Iterates through remaining combinations in parallel (MPI).
- * 4. Verifies candidate sets using condition 5 and final NPAF check.
+ * Core search logic optimized with Meet-in-the-Middle hash map lookup.
  */
 bool getAllSolutions(int n, int m, int k11, int r11, int p11, int q11, int rank, int size) {
-    std::vector<int> seq(m);
-    std::vector<std::vector<int>> k_sols, r_sols, p_sols, q_sols;
+    std::vector<int> seq_buf(m);
+    std::vector<std::vector<int>> k_raw, r_raw, p_raw, q_raw;
 
-    find_sequences(m, k11, 1, seq, 0, k_sols);
-    if (k11 != r11) find_sequences(m, r11, 1, seq, 0, r_sols); else r_sols = k_sols;
-    find_sequences(m, p11, 1, seq, 0, p_sols, true);
-    if (p11 != q11) find_sequences(m, q11, 1, seq, 0, q_sols, true); else q_sols = p_sols;
+    // 1. Generate Raw sequences
+    find_sequences(m, k11, 1, seq_buf, 0, k_raw);
+    if (k11 != r11) find_sequences(m, r11, 1, seq_buf, 0, r_raw); else r_raw = k_raw;
+    find_sequences(m, p11, 1, seq_buf, 0, p_raw, true);
+    if (p11 != q11) find_sequences(m, q11, 1, seq_buf, 0, q_raw, true); else q_raw = p_raw;
 
-    std::vector<std::pair<int, int>> valid_kr;
-    for (int i = 0; i < (int)k_sols.size(); ++i)
-        for (int j = 0; j < (int)r_sols.size(); ++j)
-            if (step2Condition3_k_r(n, m, k_sols[i], r_sols[j])) valid_kr.push_back({i, j});
+    // 2. Precompute candidates with PAF vectors
+    auto precompute = [&](const std::vector<std::vector<int>>& raw) {
+        std::vector<SequenceCandidate> candidates;
+        for (const auto& s : raw) {
+            SequenceCandidate sc;
+            sc.seq = s;
+            sc.squaredSum = getSquaredSum(s);
+            sc.pafContrib.values.resize(m / 2);
+            for (int i = 1; i <= m / 2; ++i) {
+                sc.pafContrib.values[i - 1] = naf_polynomial_decomposition(i, m, sc.seq) + 
+                                               naf_polynomial_decomposition(m - i, m, sc.seq);
+            }
+            candidates.push_back(std::move(sc));
+        }
+        return candidates;
+    };
 
+    auto k_cand = precompute(k_raw);
+    auto r_cand = precompute(r_raw);
+    auto p_cand = precompute(p_raw);
+    auto q_cand = precompute(q_raw);
+
+    // 3. Meet-in-the-Middle: Pre-calculate valid KR pairs and store in map
+    // Key: PAF Vector, Value: Indices of valid KR pairs
+    std::unordered_map<PAFVector, std::vector<std::pair<int, int>>, PAFVectorHash> kr_map;
+    
+    // Distribute map building? No, map must be complete to find all solutions.
+    // However, we only need to look up against this map.
+    for (int i = 0; i < (int)k_cand.size(); ++i) {
+        for (int j = 0; j < (int)r_cand.size(); ++j) {
+            if (step2Condition3_k_r(n, m, k_cand[i].seq, r_cand[j].seq)) {
+                PAFVector sumVec;
+                sumVec.values.resize(m / 2);
+                for (int l = 0; l < m / 2; ++l) {
+                    sumVec.values[l] = k_cand[i].pafContrib.values[l] + r_cand[j].pafContrib.values[l];
+                }
+                kr_map[sumVec].push_back({i, j});
+            }
+        }
+    }
+
+    if (rank == 0) std::cout << "Unique KR PAF states: " << kr_map.size() << std::endl;
+
+    // 4. Distribute valid PQ pairs across ranks for lookup
     std::vector<std::pair<int, int>> valid_pq;
-    for (int i = 0; i < (int)p_sols.size(); ++i)
-        for (int j = 0; j < (int)q_sols.size(); ++j)
-            if (step2Condition3_p_q(n, m, p_sols[i], q_sols[j])) valid_pq.push_back({i, j});
+    for (int i = 0; i < (int)p_cand.size(); ++i)
+        for (int j = 0; j < (int)q_cand.size(); ++j)
+            if (step2Condition3_p_q(n, m, p_cand[i].seq, q_cand[j].seq)) valid_pq.push_back({i, j});
 
-    long long combinations = static_cast<long long>(valid_kr.size()) * valid_pq.size();
-    if (rank == 0) std::cout << "Pairs KR: " << valid_kr.size() << " PQ: " << valid_pq.size() << " -> Combinations: " << combinations << std::endl;
-    if (combinations > THRESHOLD_V) return false;
-
-    int cond = 4 * n + 2;
+    int targetSquaredSum = 4 * n + 2;
     int found_local = 0;
     int found_global = 0;
-    
-    // Dynamic check interval: scale with n to reduce MPI synchronization overhead 
-    // as the search space and work per iteration grow.
-    long long check_interval = std::max(1000LL, static_cast<long long>(n) * 500);
+    long long check_interval = std::max(100LL, static_cast<long long>(n) * 10);
     long long counter = 0;
 
-    // Distribute work among MPI ranks
-    for (std::size_t idx = rank; idx < valid_kr.size(); idx += size) {
-        auto pair_kr = valid_kr[idx];
-        const auto &sk = k_sols[pair_kr.first], &sr = r_sols[pair_kr.second];
-        int sk_sum = getSquaredSum(sk), sr_sum = getSquaredSum(sr);
+    for (std::size_t idx = rank; idx < valid_pq.size(); idx += size) {
+        if (++counter >= check_interval) {
+            counter = 0;
+            MPI_Allreduce(&found_local, &found_global, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+            if (found_global) goto exit_loops;
+        }
 
-        for (const auto& pair_pq : valid_pq) {
-            // Periodic check for early exit if another rank found a solution
-            if (++counter >= check_interval) {
-                counter = 0;
-                MPI_Allreduce(&found_local, &found_global, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-                if (found_global) goto exit_loops;
-            }
+        const auto& pair_pq = valid_pq[idx];
+        const auto& sp = p_cand[pair_pq.first];
+        const auto& sq = q_cand[pair_pq.second];
+        int pq_squared = sp.squaredSum + sq.squaredSum;
 
-            const auto &sp = p_sols[pair_pq.first], &sq = q_sols[pair_pq.second];
-            if (sk_sum + sr_sum + getSquaredSum(sp) + getSquaredSum(sq) == cond) {
-                if (step2_condition5(m, sk, sr, sp, sq)) {
-                    if (sequence_verify(n, sk, sr, sp, sq)) {
+        // Target: PAF(KR) = -PAF(PQ)
+        PAFVector targetVec;
+        targetVec.values.resize(m / 2);
+        for (int l = 0; l < m / 2; ++l) {
+            targetVec.values[l] = -(sp.pafContrib.values[l] + sq.pafContrib.values[l]);
+        }
+
+        auto it = kr_map.find(targetVec);
+        if (it != kr_map.end()) {
+            for (const auto& pair_kr : it->second) {
+                const auto& sk = k_cand[pair_kr.first];
+                const auto& sr = r_cand[pair_kr.second];
+                
+                if (sk.squaredSum + sr.squaredSum + pq_squared == targetSquaredSum) {
+                    if (sequence_verify(n, sk.seq, sr.seq, sp.seq, sq.seq)) {
                         std::cout << "Rank " << rank << " found verified solution!" << std::endl;
-                        print_sequence(const_cast<std::vector<int>&>(sk), m, 'K');
-                        print_sequence(const_cast<std::vector<int>&>(sr), m, 'R');
-                        print_sequence(const_cast<std::vector<int>&>(sp), m, 'P');
-                        print_sequence(const_cast<std::vector<int>&>(sq), m, 'Q');
+                        print_sequence(const_cast<std::vector<int>&>(sk.seq), m, 'K');
+                        print_sequence(const_cast<std::vector<int>&>(sr.seq), m, 'R');
+                        print_sequence(const_cast<std::vector<int>&>(sp.seq), m, 'P');
+                        print_sequence(const_cast<std::vector<int>&>(sq.seq), m, 'Q');
                         found_local = 1;
                         MPI_Allreduce(&found_local, &found_global, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
                         goto exit_loops;
